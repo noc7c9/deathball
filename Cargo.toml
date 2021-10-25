@@ -1,0 +1,16 @@
+[package]
+name = "deathball"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+macroquad = "0.3.10"
+rapier2d = "0.11.1"
+
+[profile.dev.package.'*']
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
