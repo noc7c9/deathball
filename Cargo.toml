@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 macroquad = "0.3.10"
+nalgebra = { version = "0.29.0", features = ["convert-glam014"] }
 rapier2d = "0.11.1"
 
 [profile.dev.package.'*']

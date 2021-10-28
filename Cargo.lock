@@ -198,6 +198,7 @@ name = "deathball"
 version = "0.1.0"
 dependencies = [
  "macroquad",
+ "nalgebra",
  "rapier2d",
 ]
 
@@ -378,6 +379,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d506eb7e08d6329505faa8a3a00a5dcc6de9f76e0c77e4b75763ae3c770831ff"
 dependencies = [
  "approx",
+ "glam",
  "matrixmultiply",
  "nalgebra-macros",
  "num-complex",
