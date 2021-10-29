@@ -34,6 +34,13 @@
                 }
             }
 
+            // Disable context menu on canvas so that right click works in-game
+            canvas.addEventListener(
+                'contextmenu',
+                (e) => e.preventDefault(),
+                false,
+            );
+
             load('deathball.wasm');
         </script>
     </body>

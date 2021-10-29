@@ -1,8 +1,10 @@
 use macroquad::prelude::*;
 use rapier2d::prelude::*;
 
-const CAMERA_PAN_SPEED: f32 = 5.;
-const CAMERA_DEFAULT_ZOOM: f32 = 0.004;
+const CAMERA_PAN_SPEED: f32 = 15.;
+const CAMERA_DEFAULT_ZOOM: f32 = 0.001;
+const CAMERA_MIN_ZOOM: f32 = 0.0005;
+const CAMERA_MAX_ZOOM: f32 = 0.005;
 
 struct Context {
     entities: Vec<Entity>,
@@ -23,9 +25,46 @@ struct Context {
     ccd_solver: CCDSolver,
 }
 
-struct Input;
+struct Input {
+    drag: Option<MouseDrag>,
+}
+
+struct MouseDrag {
+    previous: Vec2,
+    current: Vec2,
+}
 
 impl Input {
+    fn new() -> Self {
+        Input { drag: None }
+    }
+
+    fn update(&mut self) {
+        let is_down = is_mouse_button_down(MouseButton::Right);
+        match self.drag {
+            // start drag
+            None if is_down => {
+                let position = mouse_position().into();
+                self.drag = Some(MouseDrag {
+                    previous: position,
+                    current: position,
+                });
+            }
+            // continue drag
+            Some(ref mut drag) if is_down => {
+                drag.previous = drag.current;
+                drag.current = mouse_position().into();
+            }
+            // end drag
+            Some(_) if !is_down => self.drag = None,
+            _ => {}
+        }
+    }
+
+    fn get_mouse_drag(&self) -> Option<&MouseDrag> {
+        self.drag.as_ref()
+    }
+
     fn get_wasd_axes(&self) -> Vec2 {
         let mut delta = vec2(0., 0.);
         if is_key_down(KeyCode::W) {
@@ -43,8 +82,15 @@ impl Input {
         delta.try_normalize().unwrap_or(Vec2::ZERO)
     }
 
-    fn get_mouse_wheel(&self) -> f32 {
-        mouse_wheel().1
+    fn get_mouse_wheel(&self) -> Option<f32> {
+        let value = mouse_wheel().1;
+        if value == 0.0 {
+            None
+        } else if cfg!(target_arch = "wasm32") {
+            Some(value.clamp(-1., 1.))
+        } else {
+            Some(value.clamp(-2., 2.))
+        }
     }
 }
 
@@ -57,16 +103,28 @@ impl Camera {
     fn new() -> Self {
         Self {
             target: vec2(0., 0.),
-            zoom: CAMERA_DEFAULT_ZOOM,
+            zoom: 1.,
         }
     }
 
-    fn enable(&self) {
-        set_camera(&Camera2D {
+    fn get_macroquad_camera(&self) -> Camera2D {
+        Camera2D {
             target: self.target,
             zoom: vec2(self.zoom, self.zoom * screen_width() / screen_height()),
             ..Default::default()
-        });
+        }
+    }
+
+    // fn world_to_screen(&self, point: Vec2) -> Vec2 {
+    //     self.get_macroquad_camera().world_to_screen(point)
+    // }
+
+    fn screen_to_world(&self, point: Vec2) -> Vec2 {
+        self.get_macroquad_camera().screen_to_world(point)
+    }
+
+    fn enable(&self) {
+        set_camera(&self.get_macroquad_camera());
     }
 
     fn disable(&self) {
@@ -170,7 +228,7 @@ async fn main() {
     let mut ctx = Context {
         entities: vec![],
 
-        input: Input,
+        input: Input::new(),
 
         camera: Camera::new(),
 
@@ -185,6 +243,8 @@ async fn main() {
         joint_set: JointSet::new(),
         ccd_solver: CCDSolver::new(),
     };
+
+    ctx.camera.zoom = CAMERA_DEFAULT_ZOOM;
 
     let screen_size = vec2(screen_width(), screen_height());
     let screen_center = screen_size / 2.;
@@ -227,9 +287,20 @@ async fn main() {
             &(),
         );
 
+        ctx.input.update();
+
         // read input
-        ctx.camera.target += ctx.input.get_wasd_axes() * CAMERA_PAN_SPEED;
-        ctx.camera.zoom *= 1.1f32.powf(ctx.input.get_mouse_wheel());
+        if let Some(drag) = ctx.input.get_mouse_drag() {
+            let previous = ctx.camera.screen_to_world(drag.previous);
+            let current = ctx.camera.screen_to_world(drag.current);
+            ctx.camera.target += previous - current;
+        } else {
+            ctx.camera.target += ctx.input.get_wasd_axes() * CAMERA_PAN_SPEED;
+        }
+        if let Some(amount) = ctx.input.get_mouse_wheel() {
+            ctx.camera.zoom =
+                (ctx.camera.zoom * 1.1f32.powf(amount)).clamp(CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM);
+        }
 
         ctx.camera.enable();
 
