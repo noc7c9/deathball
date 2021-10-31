@@ -71,7 +71,12 @@ impl Physics {
         DynamicHandle(collider_handle, rigid_body_handle)
     }
 
-    pub fn get_position(&self, handle: impl Into<Handle>) -> Vec2 {
+    pub fn get_position(&self, handle: impl Into<Handle>) -> (Vec2, f32) {
+        let handle = handle.into();
+        (self.get_translation(handle), self.get_rotation(handle))
+    }
+
+    pub fn get_translation(&self, handle: impl Into<Handle>) -> Vec2 {
         match handle.into() {
             Handle::Static(handle) => {
                 let body = &self.collider_set[handle.0];
@@ -84,8 +89,26 @@ impl Physics {
         }
     }
 
+    pub fn get_rotation(&self, handle: impl Into<Handle>) -> f32 {
+        use nalgebra::ComplexField;
+        match handle.into() {
+            Handle::Static(handle) => {
+                let body = &self.collider_set[handle.0];
+                body.rotation().to_polar().1
+            }
+            Handle::Dynamic(handle) => {
+                let body = &self.rigid_body_set[handle.1];
+                body.rotation().to_polar().1
+            }
+        }
+    }
+
     pub fn set_linear_velocity(&mut self, handle: DynamicHandle, linvel: Vec2) {
-        self.rigid_body_set[handle.1].set_linvel(linvel.into(), true)
+        self.rigid_body_set[handle.1].set_linvel(linvel.into(), true);
+    }
+
+    pub fn set_angular_velocity(&mut self, handle: DynamicHandle, angvel: f32) {
+        self.rigid_body_set[handle.1].set_angvel(angvel, true);
     }
 }
 

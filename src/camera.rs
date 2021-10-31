@@ -23,7 +23,7 @@ impl Camera {
     fn get_macroquad_camera(&self) -> Camera2D {
         Camera2D {
             target: self.target,
-            zoom: vec2(self.zoom, self.zoom * screen_width() / screen_height()),
+            zoom: vec2(self.zoom, -self.zoom * screen_width() / screen_height()),
             ..Default::default()
         }
     }
