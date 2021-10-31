@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
-use rapier2d::prelude::*;
+
+mod physics;
+use physics::Physics;
 
 const CAMERA_PAN_SPEED: f32 = 15.;
 const CAMERA_DEFAULT_ZOOM: f32 = 0.001;
@@ -8,21 +10,9 @@ const CAMERA_MAX_ZOOM: f32 = 0.005;
 
 struct Context {
     entities: Vec<Entity>,
-
     input: Input,
-
     camera: Camera,
-
-    physics_pipeline: PhysicsPipeline,
-    gravity: Vector<Real>,
-    integration_parameters: IntegrationParameters,
-    island_manager: IslandManager,
-    broad_phase: BroadPhase,
-    narrow_phase: NarrowPhase,
-    rigid_body_set: RigidBodySet,
-    collider_set: ColliderSet,
-    joint_set: JointSet,
-    ccd_solver: CCDSolver,
+    physics: Physics,
 }
 
 struct Input {
@@ -136,23 +126,19 @@ enum Entity {
     StaticRect {
         size: Vec2,
         color: Color,
-        handle: ColliderHandle,
+        handle: physics::StaticHandle,
     },
     RigidCircle {
         radius: f32,
         color: Color,
-        handle: RigidBodyHandle,
+        handle: physics::DynamicHandle,
     },
 }
 
 impl Entity {
     fn static_rect(ctx: &mut Context, position: Vec2, size: Vec2, color: Color) -> usize {
-        let collider = ColliderBuilder::cuboid(size.x / 2., size.y / 2.)
-            .translation(position.into())
-            .restitution(1.)
-            .friction(0.)
-            .build();
-        let handle = ctx.collider_set.insert(collider);
+        let collider = physics::cuboid(size);
+        let handle = ctx.physics.add_static(collider, position);
 
         let entity = Entity::StaticRect {
             size,
@@ -166,18 +152,8 @@ impl Entity {
     }
 
     fn rigid_circle(ctx: &mut Context, position: Vec2, radius: f32, color: Color) -> usize {
-        let rigid_body = RigidBodyBuilder::new_dynamic()
-            .translation(position.into())
-            .ccd_enabled(true)
-            .build();
-        let handle = ctx.rigid_body_set.insert(rigid_body);
-
-        let collider = ColliderBuilder::ball(radius)
-            .restitution(1.)
-            .friction(0.)
-            .build();
-        ctx.collider_set
-            .insert_with_parent(collider, handle, &mut ctx.rigid_body_set);
+        let collider = physics::ball(radius);
+        let handle = ctx.physics.add_dynamic(collider, position);
 
         let entity = Entity::RigidCircle {
             radius,
@@ -198,8 +174,7 @@ impl Entity {
                 color,
                 handle,
             } => {
-                let body = &ctx.collider_set[handle];
-                let pos = Vec2::from(*body.translation()) - size / 2.;
+                let pos = ctx.physics.get_position(handle) - size / 2.;
                 draw_rectangle(pos.x, pos.y, size.x, size.y, color);
             }
 
@@ -208,8 +183,7 @@ impl Entity {
                 color,
                 handle,
             } => {
-                let body = &ctx.rigid_body_set[handle];
-                let pos = *body.translation();
+                let pos = ctx.physics.get_position(handle);
                 draw_circle(pos.x, pos.y, radius, color);
             }
         }
@@ -227,21 +201,9 @@ pub fn window_config() -> Conf {
 async fn main() {
     let mut ctx = Context {
         entities: vec![],
-
         input: Input::new(),
-
         camera: Camera::new(),
-
-        physics_pipeline: PhysicsPipeline::new(),
-        gravity: vector![0., 0.],
-        integration_parameters: IntegrationParameters::default(),
-        island_manager: IslandManager::new(),
-        broad_phase: BroadPhase::new(),
-        narrow_phase: NarrowPhase::new(),
-        rigid_body_set: RigidBodySet::new(),
-        collider_set: ColliderSet::new(),
-        joint_set: JointSet::new(),
-        ccd_solver: CCDSolver::new(),
+        physics: Physics::new(),
     };
 
     ctx.camera.zoom = CAMERA_DEFAULT_ZOOM;
@@ -268,26 +230,14 @@ async fn main() {
         let dx = rand::gen_range(-500., 500.);
         let dy = rand::gen_range(-500., 500.);
         if let Entity::RigidCircle { handle, .. } = ctx.entities[idx] {
-            ctx.rigid_body_set[handle].set_linvel(vector![dx, dy], true);
+            ctx.physics.set_linear_velocity(handle, vec2(dx, dy));
         }
     }
 
     loop {
-        ctx.physics_pipeline.step(
-            &ctx.gravity,
-            &ctx.integration_parameters,
-            &mut ctx.island_manager,
-            &mut ctx.broad_phase,
-            &mut ctx.narrow_phase,
-            &mut ctx.rigid_body_set,
-            &mut ctx.collider_set,
-            &mut ctx.joint_set,
-            &mut ctx.ccd_solver,
-            &(),
-            &(),
-        );
-
         ctx.input.update();
+
+        ctx.physics.update();
 
         // read input
         if let Some(drag) = ctx.input.get_mouse_drag() {
