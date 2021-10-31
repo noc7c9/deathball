@@ -1,58 +1,18 @@
 use macroquad::prelude::*;
 
-mod physics;
-use physics::Physics;
+mod camera;
 mod input;
-use input::Input;
+mod physics;
 
-const CAMERA_PAN_SPEED: f32 = 15.;
-const CAMERA_DEFAULT_ZOOM: f32 = 0.001;
-const CAMERA_MIN_ZOOM: f32 = 0.0005;
-const CAMERA_MAX_ZOOM: f32 = 0.005;
+use camera::Camera;
+use input::Input;
+use physics::Physics;
 
 struct Context {
     entities: Vec<Entity>,
     input: Input,
     camera: Camera,
     physics: Physics,
-}
-
-struct Camera {
-    target: Vec2,
-    zoom: f32,
-}
-
-impl Camera {
-    fn new() -> Self {
-        Self {
-            target: vec2(0., 0.),
-            zoom: 1.,
-        }
-    }
-
-    fn get_macroquad_camera(&self) -> Camera2D {
-        Camera2D {
-            target: self.target,
-            zoom: vec2(self.zoom, self.zoom * screen_width() / screen_height()),
-            ..Default::default()
-        }
-    }
-
-    // fn world_to_screen(&self, point: Vec2) -> Vec2 {
-    //     self.get_macroquad_camera().world_to_screen(point)
-    // }
-
-    fn screen_to_world(&self, point: Vec2) -> Vec2 {
-        self.get_macroquad_camera().screen_to_world(point)
-    }
-
-    fn enable(&self) {
-        set_camera(&self.get_macroquad_camera());
-    }
-
-    fn disable(&self) {
-        set_default_camera();
-    }
 }
 
 enum Entity {
@@ -139,8 +99,6 @@ async fn main() {
         physics: Physics::new(),
     };
 
-    ctx.camera.zoom = CAMERA_DEFAULT_ZOOM;
-
     let screen_size = vec2(screen_width(), screen_height());
     let screen_center = screen_size / 2.;
 
@@ -172,19 +130,7 @@ async fn main() {
 
         ctx.physics.update();
 
-        // read input
-        if let Some(drag) = ctx.input.get_mouse_drag() {
-            let previous = ctx.camera.screen_to_world(drag.previous);
-            let current = ctx.camera.screen_to_world(drag.current);
-            ctx.camera.target += previous - current;
-        } else {
-            ctx.camera.target += ctx.input.get_wasd_axes() * CAMERA_PAN_SPEED;
-        }
-        if let Some(amount) = ctx.input.get_mouse_wheel() {
-            ctx.camera.zoom =
-                (ctx.camera.zoom * 1.1f32.powf(amount)).clamp(CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM);
-        }
-
+        ctx.camera.update(&ctx.input);
         ctx.camera.enable();
 
         // draw
