@@ -48,14 +48,15 @@ impl Physics {
         )
     }
 
-    pub fn add_static(&mut self, collider: Collider, position: Vec2) -> StaticHandle {
-        let mut collider = collider;
+    pub fn add_static(&mut self, collider: MyColliderBuilder, position: Vec2) -> StaticHandle {
+        let mut collider = collider.0.build();
         collider.set_translation(position.into());
         let collider_handle = self.collider_set.insert(collider);
         StaticHandle(collider_handle)
     }
 
-    pub fn add_dynamic(&mut self, collider: Collider, position: Vec2) -> DynamicHandle {
+    pub fn add_dynamic(&mut self, collider: MyColliderBuilder, position: Vec2) -> DynamicHandle {
+        let collider = collider.0.build();
         let rigid_body = RigidBodyBuilder::new_dynamic()
             .translation(position.into())
             .ccd_enabled(true)
@@ -132,18 +133,27 @@ impl Physics {
     }
 }
 
-pub fn cuboid(size: Vec2) -> Collider {
-    ColliderBuilder::cuboid(size.x / 2., size.y / 2.)
-        .restitution(1.)
-        .friction(0.)
-        .build()
+pub struct MyColliderBuilder(ColliderBuilder);
+
+impl MyColliderBuilder {
+    pub fn mass(mut self, mass: f32) -> Self {
+        // ensure the builder has a mass_properties
+        if self.0.mass_properties.is_none() {
+            self.0.mass_properties = Some(self.0.shape.mass_properties(1.));
+        }
+
+        (*self.0.mass_properties.as_mut().unwrap()).set_mass(mass, true);
+
+        self
+    }
 }
 
-pub fn ball(radius: f32) -> Collider {
-    ColliderBuilder::ball(radius)
-        .restitution(1.)
-        .friction(0.)
-        .build()
+pub fn cuboid(size: Vec2) -> MyColliderBuilder {
+    MyColliderBuilder(ColliderBuilder::cuboid(size.x / 2., size.y / 2.))
+}
+
+pub fn ball(radius: f32) -> MyColliderBuilder {
+    MyColliderBuilder(ColliderBuilder::ball(radius))
 }
 
 #[derive(Clone, Copy)]
