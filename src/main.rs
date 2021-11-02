@@ -222,6 +222,8 @@ impl Animal {
 pub fn window_config() -> Conf {
     Conf {
         window_title: "Giant Horse Deathball".to_owned(),
+        window_width: 1200,
+        window_height: 1200,
         ..Default::default()
     }
 }
