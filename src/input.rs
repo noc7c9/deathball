@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 
 pub struct Input {
-    drag: Option<MouseDrag>,
+    rmb_drag: Option<MouseDrag>,
 }
 
 #[derive(Clone, Copy)]
@@ -12,33 +12,29 @@ pub struct MouseDrag {
 
 impl Input {
     pub fn new() -> Self {
-        Input { drag: None }
+        Input { rmb_drag: None }
     }
 
     pub fn update(&mut self) {
         let is_down = is_mouse_button_down(MouseButton::Right);
-        match self.drag {
+        match self.rmb_drag {
             // start drag
             None if is_down => {
                 let position = mouse_position().into();
-                self.drag = Some(MouseDrag {
+                self.rmb_drag = Some(MouseDrag {
                     previous: position,
                     current: position,
                 });
             }
             // continue drag
-            Some(ref mut drag) if is_down => {
-                drag.previous = drag.current;
-                drag.current = mouse_position().into();
+            Some(ref mut rmb_drag) if is_down => {
+                rmb_drag.previous = rmb_drag.current;
+                rmb_drag.current = mouse_position().into();
             }
             // end drag
-            Some(_) if !is_down => self.drag = None,
+            Some(_) if !is_down => self.rmb_drag = None,
             _ => {}
         }
-    }
-
-    pub fn get_mouse_drag(&self) -> Option<MouseDrag> {
-        self.drag
     }
 
     pub fn get_wasd_axes(&self) -> Vec2 {
@@ -56,6 +52,10 @@ impl Input {
             delta.x += 1.0;
         }
         delta.try_normalize().unwrap_or(Vec2::ZERO)
+    }
+
+    pub fn get_mouse_right_button_drag(&self) -> Option<MouseDrag> {
+        self.rmb_drag
     }
 
     pub fn get_mouse_wheel(&self) -> Option<f32> {

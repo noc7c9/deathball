@@ -46,7 +46,7 @@ impl Camera {
 
     pub fn update(&mut self, input: &crate::input::Input) {
         // Mouse Panning
-        if let Some(drag) = input.get_mouse_drag() {
+        if let Some(drag) = input.get_mouse_right_button_drag() {
             let previous = self.screen_to_world(drag.previous);
             let current = self.screen_to_world(drag.current);
             self.target += previous - current;
