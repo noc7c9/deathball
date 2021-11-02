@@ -114,94 +114,28 @@ struct Animal {
 }
 
 impl Animal {
-    fn base(physics: &mut Physics, sprite: Sprite, position: Vec2) -> Self {
+    fn random(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
+        let animals = [
+            ("horse", vec2(1., 0.)),
+            ("duck", vec2(2., 0.)),
+            ("snake", vec2(3., 0.)),
+            ("mouse", vec2(4., 0.)),
+            ("rabbit", vec2(5., 0.)),
+            ("kuma", vec2(6., 0.)),
+            ("dog", vec2(7., 0.)),
+            ("cat", vec2(0., 1.)),
+            ("turtle", vec2(1., 1.)),
+            ("snail", vec2(2., 1.)),
+            ("loaf", vec2(4., 5.)),
+            ("poop", vec2(5., 5.)),
+            ("rubber_ducky", vec2(6., 5.)),
+        ];
+        let (_, sprite) = animals[rand::gen_range(0, animals.len())];
+
+        let sprite = assets.animals.sprite(sprite);
         let collider = physics::ball(SPRITE_SIZE / 2.).mass(1.);
         let handle = physics.add_dynamic(collider, position);
         Animal { sprite, handle }
-    }
-
-    fn random(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let animals = [
-            Animal::horse,
-            Animal::duck,
-            Animal::snake,
-            Animal::mouse,
-            Animal::rabbit,
-            Animal::kuma,
-            Animal::dog,
-            Animal::cat,
-            Animal::turtle,
-            Animal::snail,
-            Animal::loaf,
-            Animal::poop,
-            Animal::rubber_ducky,
-        ];
-        animals[rand::gen_range(0, animals.len())](assets, physics, position)
-    }
-
-    fn horse(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(1., 0.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn duck(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(2., 0.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn snake(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(3., 0.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn mouse(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(4., 0.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn rabbit(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(5., 0.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn kuma(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(6., 0.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn dog(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(7., 0.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn cat(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(0., 1.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn turtle(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(1., 1.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn snail(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(2., 1.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn loaf(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(4., 5.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn poop(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(5., 5.));
-        Animal::base(physics, sprite, position)
-    }
-
-    fn rubber_ducky(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
-        let sprite = assets.animals.sprite(vec2(6., 5.));
-        Animal::base(physics, sprite, position)
     }
 
     fn update(&mut self, physics: &mut Physics, death_ball: &DeathBall) {
