@@ -58,6 +58,14 @@ impl Input {
         self.rmb_drag
     }
 
+    pub fn get_mouse_left_button_down(&self) -> Option<Vec2> {
+        if is_mouse_button_down(MouseButton::Left) {
+            Some(mouse_position().into())
+        } else {
+            None
+        }
+    }
+
     pub fn get_mouse_wheel(&self) -> Option<f32> {
         let value = mouse_wheel().1;
         if value == 0.0 {

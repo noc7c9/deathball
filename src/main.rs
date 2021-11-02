@@ -19,6 +19,7 @@ struct Context {
     camera: Camera,
     physics: Physics,
 
+    death_ball: DeathBall,
     animals: Vec<Animal>,
     boundaries: Vec<Boundary>,
 }
@@ -83,6 +84,30 @@ impl Boundary {
     }
 }
 
+struct DeathBall {
+    position: Vec2,
+    sprite: Sprite,
+}
+
+impl DeathBall {
+    fn new(assets: &Assets) -> Self {
+        DeathBall {
+            position: Vec2::ZERO,
+            sprite: assets.animals.sprite(vec2(7., 5.)),
+        }
+    }
+
+    fn update(&mut self, input: &Input, camera: &Camera) {
+        if let Some(position) = input.get_mouse_left_button_down() {
+            self.position = camera.screen_to_world(position);
+        }
+    }
+
+    fn draw(&self) {
+        self.sprite.draw(self.position, 0.);
+    }
+}
+
 struct Animal {
     handle: physics::DynamicHandle,
     sprite: Sprite,
@@ -90,7 +115,7 @@ struct Animal {
 
 impl Animal {
     fn base(physics: &mut Physics, sprite: Sprite, position: Vec2) -> Self {
-        let collider = physics::ball(SPRITE_SIZE / 2.);
+        let collider = physics::ball(SPRITE_SIZE / 2.).mass(1.);
         let handle = physics.add_dynamic(collider, position);
         Animal { sprite, handle }
     }
@@ -179,6 +204,14 @@ impl Animal {
         Animal::base(physics, sprite, position)
     }
 
+    fn update(&mut self, physics: &mut Physics, death_ball: &DeathBall) {
+        const UNIT_SPEED: f32 = 10.;
+
+        let position = physics.get_position(self.handle);
+        let impulse = (death_ball.position - position).normalize() * UNIT_SPEED;
+        physics.apply_impulse(self.handle, impulse);
+    }
+
     fn draw(&self, physics: &Physics) {
         let pos = physics.get_position(self.handle);
         let rot = physics.get_rotation(self.handle);
@@ -195,12 +228,15 @@ pub fn window_config() -> Conf {
 
 #[macroquad::main(window_config)]
 async fn main() {
+    let assets = Assets::load().await;
+    let death_ball = DeathBall::new(&assets);
     let mut ctx = Context {
-        assets: Assets::load().await,
+        assets,
         input: Input::new(),
         camera: Camera::new(),
         physics: Physics::new(),
 
+        death_ball,
         animals: vec![],
         boundaries: vec![],
     };
@@ -234,21 +270,22 @@ async fn main() {
     }
 
     // Create ball
-    for _ in 0..100 {
+    for _ in 0..10 {
         let x = rand::gen_range(-screen_center.x + 160., screen_center.x - 160.);
         let y = rand::gen_range(-screen_center.y + 160., screen_center.y - 160.);
         let animal = Animal::random(&ctx.assets, &mut ctx.physics, vec2(x, y));
-
-        let vel = vec2(rand::gen_range(-500., 500.), rand::gen_range(-500., 500.));
-        ctx.physics.set_linear_velocity(animal.handle, vel);
-
-        let ang = rand::gen_range(-5., 5.);
-        ctx.physics.set_angular_velocity(animal.handle, ang);
 
         ctx.animals.push(animal);
     }
 
     loop {
+        // Update entities
+        ctx.death_ball.update(&ctx.input, &ctx.camera);
+        for animal in &mut ctx.animals {
+            animal.update(&mut ctx.physics, &ctx.death_ball);
+        }
+
+        // Update subsystems
         ctx.input.update();
 
         ctx.physics.update();
@@ -258,6 +295,7 @@ async fn main() {
 
         // Draw
         clear_background(BLACK);
+        ctx.death_ball.draw();
         for animal in &ctx.animals {
             animal.draw(&ctx.physics);
         }

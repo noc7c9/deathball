@@ -107,6 +107,10 @@ impl Physics {
         self.rigid_body_set[handle.1].set_angvel(angvel, true);
     }
 
+    pub fn apply_impulse(&mut self, handle: DynamicHandle, impulse: Vec2) {
+        self.rigid_body_set[handle.1].apply_impulse(impulse.into(), true);
+    }
+
     pub fn draw_colliders(&self) {
         use nalgebra::ComplexField;
 
