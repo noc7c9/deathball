@@ -77,7 +77,8 @@ impl Boundary {
     }
 
     fn draw(&self, physics: &Physics) {
-        let (pos, rot) = physics.get_position(self.handle);
+        let pos = physics.get_position(self.handle);
+        let rot = physics.get_rotation(self.handle);
         self.sprite.draw(pos + self.offset, rot);
     }
 }
@@ -179,7 +180,8 @@ impl Animal {
     }
 
     fn draw(&self, physics: &Physics) {
-        let (pos, rot) = physics.get_position(self.handle);
+        let pos = physics.get_position(self.handle);
+        let rot = physics.get_rotation(self.handle);
         self.sprite.draw(pos, rot);
     }
 }

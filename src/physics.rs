@@ -71,12 +71,7 @@ impl Physics {
         DynamicHandle(collider_handle, rigid_body_handle)
     }
 
-    pub fn get_position(&self, handle: impl Into<Handle>) -> (Vec2, f32) {
-        let handle = handle.into();
-        (self.get_translation(handle), self.get_rotation(handle))
-    }
-
-    pub fn get_translation(&self, handle: impl Into<Handle>) -> Vec2 {
+    pub fn get_position(&self, handle: impl Into<Handle>) -> Vec2 {
         match handle.into() {
             Handle::Static(handle) => {
                 let body = &self.collider_set[handle.0];
