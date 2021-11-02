@@ -2,7 +2,7 @@
 //! - use glam vectors so it works nicer with macroquad
 //! - exposes the minimal amount of complexity necessary for
 
-use macroquad::prelude::Vec2;
+use macroquad::prelude::*;
 use rapier2d::prelude::*;
 
 pub struct Physics {
@@ -109,6 +109,31 @@ impl Physics {
 
     pub fn set_angular_velocity(&mut self, handle: DynamicHandle, angvel: f32) {
         self.rigid_body_set[handle.1].set_angvel(angvel, true);
+    }
+
+    pub fn draw_colliders(&self) {
+        use nalgebra::ComplexField;
+
+        const COLOR: Color = Color::new(0.0, 0.47, 0.95, 0.5);
+
+        for (_, collider) in self.collider_set.iter() {
+            let translation = collider.translation();
+
+            match collider.shape().as_typed_shape() {
+                TypedShape::Ball(ball) => {
+                    draw_circle(translation.x, translation.y, ball.radius, COLOR);
+                }
+                TypedShape::Cuboid(cuboid) => {
+                    if collider.rotation().to_polar().1 != 0. {
+                        panic!("drawing rotated rectangles is unsupported");
+                    }
+                    let size = cuboid.half_extents * 2.;
+                    let translation = translation - cuboid.half_extents;
+                    draw_rectangle(translation.x, translation.y, size.x, size.y, COLOR);
+                }
+                _ => panic!("drawing shape is unsupported"),
+            }
+        }
     }
 }
 

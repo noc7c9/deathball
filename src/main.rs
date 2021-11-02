@@ -10,6 +10,7 @@ use input::Input;
 use physics::Physics;
 use spritesheet::{Sprite, Spritesheet};
 
+const DRAW_COLLIDERS: bool = false;
 const SPRITE_SIZE: f32 = 32.;
 
 struct Context {
@@ -258,6 +259,10 @@ async fn main() {
         }
         for boundary in &ctx.boundaries {
             boundary.draw(&ctx);
+        }
+
+        if DRAW_COLLIDERS {
+            ctx.physics.draw_colliders();
         }
 
         ctx.camera.disable();
