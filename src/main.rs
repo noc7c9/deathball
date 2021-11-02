@@ -13,12 +13,71 @@ use spritesheet::{Sprite, Spritesheet};
 const SPRITE_SIZE: f32 = 32.;
 
 struct Context {
-    spritesheet: Spritesheet,
+    assets: Assets,
     animals: Vec<Animal>,
-    entities: Vec<Entity>,
+    boundaries: Vec<Boundary>,
     input: Input,
     camera: Camera,
     physics: Physics,
+}
+
+struct Assets {
+    animals: Spritesheet,
+    buildings: Spritesheet,
+}
+
+impl Assets {
+    async fn load() -> Self {
+        let animals = load_texture("./assets/animals.png").await.unwrap();
+        let buildings = load_texture("./assets/buildings.png").await.unwrap();
+        Assets {
+            animals: Spritesheet::new(animals, SPRITE_SIZE),
+            buildings: Spritesheet::new(buildings, SPRITE_SIZE * 4.),
+        }
+    }
+}
+
+struct Boundary {
+    handle: physics::StaticHandle,
+    sprite: Sprite,
+    offset: Vec2,
+}
+
+impl Boundary {
+    fn horizontal_fence(ctx: &mut Context, position: Vec2) -> Self {
+        let offset = vec2(0., -SPRITE_SIZE * 1.5);
+        let size = vec2(SPRITE_SIZE * 4. * 3., SPRITE_SIZE);
+
+        let sprite = ctx.assets.buildings.multisprite(vec2(2., 0.), vec2(3., 1.));
+        let collider = physics::cuboid(size);
+        let handle = ctx.physics.add_static(collider, position);
+
+        Boundary {
+            sprite,
+            handle,
+            offset,
+        }
+    }
+
+    fn vertical_fence(ctx: &mut Context, position: Vec2) -> Self {
+        let offset = vec2(SPRITE_SIZE * 0.5, 0.);
+        let size = vec2(SPRITE_SIZE, SPRITE_SIZE * 4. * 3.);
+
+        let sprite = ctx.assets.buildings.multisprite(vec2(0., 1.), vec2(1., 3.));
+        let collider = physics::cuboid(size);
+        let handle = ctx.physics.add_static(collider, position);
+
+        Boundary {
+            sprite,
+            handle,
+            offset,
+        }
+    }
+
+    fn draw(&self, ctx: &Context) {
+        let (pos, rot) = ctx.physics.get_position(self.handle);
+        self.sprite.draw(pos + self.offset, rot);
+    }
 }
 
 struct Animal {
@@ -53,112 +112,73 @@ impl Animal {
     }
 
     fn horse(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(1., 0.));
+        let sprite = ctx.assets.animals.sprite(vec2(1., 0.));
         Animal::base(ctx, sprite, position)
     }
 
     fn duck(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(2., 0.));
+        let sprite = ctx.assets.animals.sprite(vec2(2., 0.));
         Animal::base(ctx, sprite, position)
     }
 
     fn snake(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(3., 0.));
+        let sprite = ctx.assets.animals.sprite(vec2(3., 0.));
         Animal::base(ctx, sprite, position)
     }
 
     fn mouse(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(4., 0.));
+        let sprite = ctx.assets.animals.sprite(vec2(4., 0.));
         Animal::base(ctx, sprite, position)
     }
 
     fn rabbit(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(5., 0.));
+        let sprite = ctx.assets.animals.sprite(vec2(5., 0.));
         Animal::base(ctx, sprite, position)
     }
 
     fn kuma(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(6., 0.));
+        let sprite = ctx.assets.animals.sprite(vec2(6., 0.));
         Animal::base(ctx, sprite, position)
     }
 
     fn dog(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(7., 0.));
+        let sprite = ctx.assets.animals.sprite(vec2(7., 0.));
         Animal::base(ctx, sprite, position)
     }
 
     fn cat(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(0., 1.));
+        let sprite = ctx.assets.animals.sprite(vec2(0., 1.));
         Animal::base(ctx, sprite, position)
     }
 
     fn turtle(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(1., 1.));
+        let sprite = ctx.assets.animals.sprite(vec2(1., 1.));
         Animal::base(ctx, sprite, position)
     }
 
     fn snail(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(2., 1.));
+        let sprite = ctx.assets.animals.sprite(vec2(2., 1.));
         Animal::base(ctx, sprite, position)
     }
 
     fn loaf(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(4., 5.));
+        let sprite = ctx.assets.animals.sprite(vec2(4., 5.));
         Animal::base(ctx, sprite, position)
     }
 
     fn poop(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(5., 5.));
+        let sprite = ctx.assets.animals.sprite(vec2(5., 5.));
         Animal::base(ctx, sprite, position)
     }
 
     fn rubber_ducky(ctx: &mut Context, position: Vec2) -> Self {
-        let sprite = ctx.spritesheet.sprite(vec2(6., 5.));
+        let sprite = ctx.assets.animals.sprite(vec2(6., 5.));
         Animal::base(ctx, sprite, position)
     }
 
     fn draw(&self, ctx: &Context) {
         let (pos, rot) = ctx.physics.get_position(self.handle);
         self.sprite.draw(pos, rot);
-    }
-}
-
-enum Entity {
-    StaticRect {
-        size: Vec2,
-        color: Color,
-        handle: physics::StaticHandle,
-    },
-}
-
-impl Entity {
-    fn static_rect(ctx: &mut Context, position: Vec2, size: Vec2, color: Color) -> usize {
-        let collider = physics::cuboid(size);
-        let handle = ctx.physics.add_static(collider, position);
-
-        let entity = Entity::StaticRect {
-            size,
-            color,
-            handle,
-        };
-
-        let idx = ctx.entities.len();
-        ctx.entities.push(entity);
-        idx
-    }
-
-    fn draw(&self, ctx: &Context) {
-        use Entity::*;
-        match *self {
-            StaticRect {
-                size,
-                color,
-                handle,
-            } => {
-                let pos = ctx.physics.get_translation(handle) - size / 2.;
-                draw_rectangle(pos.x, pos.y, size.x, size.y, color);
-            }
-        }
     }
 }
 
@@ -171,15 +191,10 @@ pub fn window_config() -> Conf {
 
 #[macroquad::main(window_config)]
 async fn main() {
-    let spritesheet = {
-        let tex = load_texture("./assets/animals.png").await.unwrap();
-        Spritesheet::new(tex, SPRITE_SIZE)
-    };
-
     let mut ctx = Context {
-        spritesheet,
+        assets: Assets::load().await,
         animals: vec![],
-        entities: vec![],
+        boundaries: vec![],
         input: Input::new(),
         camera: Camera::new(),
         physics: Physics::new(),
@@ -189,19 +204,34 @@ async fn main() {
     let screen_center = screen_size / 2.;
 
     // Create the boundaries
-    {
-        let s = screen_size;
-        let c = screen_center;
-        Entity::static_rect(&mut ctx, vec2(0., -c.y), vec2(s.x + 10., 10.), BLUE);
-        Entity::static_rect(&mut ctx, vec2(0., c.y), vec2(s.x + 10., 10.), BLUE);
-        Entity::static_rect(&mut ctx, vec2(-c.x, 0.), vec2(10., s.y + 10.), BLUE);
-        Entity::static_rect(&mut ctx, vec2(c.x, 0.), vec2(10., s.y + 10.), BLUE);
+    for pos in [
+        vec2(0., -500.),
+        vec2(-344., -500.),
+        vec2(344., -500.),
+        vec2(0., 500.),
+        vec2(-344., 500.),
+        vec2(344., 500.),
+    ] {
+        let fence = Boundary::horizontal_fence(&mut ctx, pos);
+        ctx.boundaries.push(fence);
+    }
+
+    for pos in [
+        vec2(-530., -344.),
+        vec2(-530., 0.),
+        vec2(-530., 344.),
+        vec2(530., -344.),
+        vec2(530., 0.),
+        vec2(530., 344.),
+    ] {
+        let fence = Boundary::vertical_fence(&mut ctx, pos);
+        ctx.boundaries.push(fence);
     }
 
     // Create ball
     for _ in 0..100 {
-        let x = rand::gen_range(-screen_center.x + 25., screen_center.x - 25.);
-        let y = rand::gen_range(-screen_center.y + 25., screen_center.y - 25.);
+        let x = rand::gen_range(-screen_center.x + 160., screen_center.x - 160.);
+        let y = rand::gen_range(-screen_center.y + 160., screen_center.y - 160.);
         let animal = Animal::random(&mut ctx, vec2(x, y));
 
         let vel = vec2(rand::gen_range(-500., 500.), rand::gen_range(-500., 500.));
@@ -226,8 +256,8 @@ async fn main() {
         for animal in &ctx.animals {
             animal.draw(&ctx);
         }
-        for entity in &ctx.entities {
-            entity.draw(&ctx);
+        for boundary in &ctx.boundaries {
+            boundary.draw(&ctx);
         }
 
         ctx.camera.disable();
