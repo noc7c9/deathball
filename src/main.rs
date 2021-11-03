@@ -7,7 +7,7 @@ mod physics;
 mod spritesheet;
 
 use camera::Camera;
-use entities::Entities;
+use entities::{Entities, GenerationalIndex};
 use input::Input;
 use physics::Physics;
 use spritesheet::{Sprite, Spritesheet};
@@ -53,13 +53,18 @@ struct Boundary {
 }
 
 impl Boundary {
-    fn horizontal_fence(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
+    fn horizontal_fence(
+        idx: GenerationalIndex,
+        assets: &Assets,
+        physics: &mut Physics,
+        position: Vec2,
+    ) -> Self {
         let offset = vec2(0., -SPRITE_SIZE * 1.5);
         let size = vec2(SPRITE_SIZE * 4. * 3., SPRITE_SIZE);
 
         let sprite = assets.buildings.multisprite(vec2(2., 0.), vec2(3., 1.));
         let collider = physics::cuboid(size);
-        let handle = physics.add_static(collider, position);
+        let handle = physics.add_static(idx, collider, position);
 
         Boundary {
             sprite,
@@ -68,13 +73,18 @@ impl Boundary {
         }
     }
 
-    fn vertical_fence(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
+    fn vertical_fence(
+        idx: GenerationalIndex,
+        assets: &Assets,
+        physics: &mut Physics,
+        position: Vec2,
+    ) -> Self {
         let offset = vec2(SPRITE_SIZE * 0.5, 0.);
         let size = vec2(SPRITE_SIZE, SPRITE_SIZE * 4. * 3.);
 
         let sprite = assets.buildings.multisprite(vec2(0., 1.), vec2(1., 3.));
         let collider = physics::cuboid(size);
-        let handle = physics.add_static(collider, position);
+        let handle = physics.add_static(idx, collider, position);
 
         Boundary {
             sprite,
@@ -120,7 +130,12 @@ struct Animal {
 }
 
 impl Animal {
-    fn random(assets: &Assets, physics: &mut Physics, position: Vec2) -> Self {
+    fn random(
+        idx: GenerationalIndex,
+        assets: &Assets,
+        physics: &mut Physics,
+        position: Vec2,
+    ) -> Self {
         let animals = [
             ("horse", vec2(1., 0.)),
             ("duck", vec2(2., 0.)),
@@ -140,7 +155,7 @@ impl Animal {
 
         let sprite = assets.animals.sprite(sprite);
         let collider = physics::ball(SPRITE_SIZE / 2.).mass(1.);
-        let handle = physics.add_dynamic(collider, position);
+        let handle = physics.add_dynamic(idx, collider, position);
         Animal { sprite, handle }
     }
 
@@ -196,7 +211,7 @@ async fn main() {
         vec2(344., 500.),
     ] {
         ctx.boundaries
-            .push(|_| Boundary::horizontal_fence(&ctx.assets, &mut ctx.physics, pos));
+            .push(|idx| Boundary::horizontal_fence(idx, &ctx.assets, &mut ctx.physics, pos));
     }
 
     for pos in [
@@ -208,7 +223,7 @@ async fn main() {
         vec2(530., 344.),
     ] {
         ctx.boundaries
-            .push(|_| Boundary::vertical_fence(&ctx.assets, &mut ctx.physics, pos));
+            .push(|idx| Boundary::vertical_fence(idx, &ctx.assets, &mut ctx.physics, pos));
     }
 
     // Create ball
@@ -217,7 +232,7 @@ async fn main() {
         let y = rand::gen_range(-screen_center.y + 160., screen_center.y - 160.);
 
         ctx.animals
-            .push(|_| Animal::random(&ctx.assets, &mut ctx.physics, vec2(x, y)));
+            .push(|idx| Animal::random(idx, &ctx.assets, &mut ctx.physics, vec2(x, y)));
     }
 
     loop {

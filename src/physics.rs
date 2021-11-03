@@ -5,6 +5,8 @@
 use macroquad::prelude::*;
 use rapier2d::prelude::*;
 
+use crate::entities::GenerationalIndex;
+
 pub struct Physics {
     physics_pipeline: PhysicsPipeline,
     integration_parameters: IntegrationParameters,
@@ -48,15 +50,25 @@ impl Physics {
         )
     }
 
-    pub fn add_static(&mut self, collider: MyColliderBuilder, position: Vec2) -> StaticHandle {
-        let mut collider = collider.0.build();
+    pub fn add_static(
+        &mut self,
+        idx: GenerationalIndex,
+        collider: MyColliderBuilder,
+        position: Vec2,
+    ) -> StaticHandle {
+        let mut collider = collider.0.user_data(idx.to_u128()).build();
         collider.set_translation(position.into());
         let collider_handle = self.collider_set.insert(collider);
         StaticHandle(collider_handle)
     }
 
-    pub fn add_dynamic(&mut self, collider: MyColliderBuilder, position: Vec2) -> DynamicHandle {
-        let collider = collider.0.build();
+    pub fn add_dynamic(
+        &mut self,
+        idx: GenerationalIndex,
+        collider: MyColliderBuilder,
+        position: Vec2,
+    ) -> DynamicHandle {
+        let collider = collider.0.user_data(idx.to_u128()).build();
         let rigid_body = RigidBodyBuilder::new_dynamic()
             .translation(position.into())
             .ccd_enabled(true)
@@ -70,6 +82,11 @@ impl Physics {
             &mut self.rigid_body_set,
         );
         DynamicHandle(collider_handle, rigid_body_handle)
+    }
+
+    pub fn get_idx(&self, handle: impl Into<Handle>) -> GenerationalIndex {
+        let collider = &self.collider_set[handle.into().collision_handle()];
+        GenerationalIndex::from_u128(collider.user_data)
     }
 
     pub fn get_position(&self, handle: impl Into<Handle>) -> Vec2 {
@@ -170,6 +187,15 @@ pub struct DynamicHandle(ColliderHandle, RigidBodyHandle);
 pub enum Handle {
     Static(StaticHandle),
     Dynamic(DynamicHandle),
+}
+
+impl Handle {
+    fn collision_handle(self) -> ColliderHandle {
+        match self {
+            Handle::Static(StaticHandle(handle)) => handle,
+            Handle::Dynamic(DynamicHandle(handle, ..)) => handle,
+        }
+    }
 }
 
 impl From<StaticHandle> for Handle {
