@@ -1,17 +1,23 @@
 use macroquad::prelude::*;
 
 mod camera;
+mod entities;
 mod input;
 mod physics;
 mod spritesheet;
 
 use camera::Camera;
+use entities::Entities;
 use input::Input;
 use physics::Physics;
 use spritesheet::{Sprite, Spritesheet};
 
 const DRAW_COLLIDERS: bool = false;
 const SPRITE_SIZE: f32 = 32.;
+
+// Entity Group Ids
+const GROUP_ANIMAL: u8 = 1;
+const GROUP_BOUNDARY: u8 = 2;
 
 struct Context {
     assets: Assets,
@@ -20,8 +26,8 @@ struct Context {
     physics: Physics,
 
     death_ball: DeathBall,
-    animals: Vec<Animal>,
-    boundaries: Vec<Boundary>,
+    animals: Entities<Animal, GROUP_ANIMAL>,
+    boundaries: Entities<Boundary, GROUP_BOUNDARY>,
 }
 
 struct Assets {
@@ -173,8 +179,8 @@ async fn main() {
         physics: Physics::new(),
 
         death_ball,
-        animals: vec![],
-        boundaries: vec![],
+        animals: Entities::new(),
+        boundaries: Entities::new(),
     };
 
     let screen_size = vec2(screen_width(), screen_height());
@@ -189,8 +195,8 @@ async fn main() {
         vec2(-344., 500.),
         vec2(344., 500.),
     ] {
-        let fence = Boundary::horizontal_fence(&ctx.assets, &mut ctx.physics, pos);
-        ctx.boundaries.push(fence);
+        ctx.boundaries
+            .push(|_| Boundary::horizontal_fence(&ctx.assets, &mut ctx.physics, pos));
     }
 
     for pos in [
@@ -201,17 +207,17 @@ async fn main() {
         vec2(530., 0.),
         vec2(530., 344.),
     ] {
-        let fence = Boundary::vertical_fence(&ctx.assets, &mut ctx.physics, pos);
-        ctx.boundaries.push(fence);
+        ctx.boundaries
+            .push(|_| Boundary::vertical_fence(&ctx.assets, &mut ctx.physics, pos));
     }
 
     // Create ball
     for _ in 0..10 {
         let x = rand::gen_range(-screen_center.x + 160., screen_center.x - 160.);
         let y = rand::gen_range(-screen_center.y + 160., screen_center.y - 160.);
-        let animal = Animal::random(&ctx.assets, &mut ctx.physics, vec2(x, y));
 
-        ctx.animals.push(animal);
+        ctx.animals
+            .push(|_| Animal::random(&ctx.assets, &mut ctx.physics, vec2(x, y)));
     }
 
     loop {
