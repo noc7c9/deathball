@@ -17,7 +17,7 @@ const SPRITE_SIZE: f32 = 32.;
 
 // Entity Group Ids
 const GROUP_ANIMAL: u8 = 1;
-const GROUP_BOUNDARY: u8 = 2;
+const GROUP_BUILDING: u8 = 2;
 
 const DEATHBALL_IDX: GenerationalIndex = GenerationalIndex::single(0);
 
@@ -30,7 +30,7 @@ struct Context {
 
     death_ball: DeathBall,
     animals: Entities<Animal, GROUP_ANIMAL>,
-    boundaries: Entities<Boundary, GROUP_BOUNDARY>,
+    buildings: Entities<Building, GROUP_BUILDING>,
 }
 
 struct Assets {
@@ -49,31 +49,76 @@ impl Assets {
     }
 }
 
-struct Boundary {
+struct Building {
     handle: physics::StaticHandle,
     sprite: Sprite,
     offset: Vec2,
 }
 
-impl Boundary {
+// name, multisprite, size, offset
+type BuildingVariant = (
+    &'static str,
+    ((f32, f32), (f32, f32)),
+    (f32, f32),
+    (f32, f32),
+);
+
+impl Building {
+    #[rustfmt::skip]
+    const VARIANTS: [BuildingVariant; 22] = [
+        ("barn",                ((1., 3.), (2., 1.)), (194., 68.), (10., -35.)),
+        ("car",                 ((0., 4.), (2., 1.)), (248., 72.), (-5., -38.)),
+        ("concrete_wall_h",     ((5., 0.), (3., 1.)), (350., 40.), (0., -35.)),
+        ("concrete_wall_v",     ((7., 1.), (1., 3.)), (54., 322.), (-4., -28.)),
+        ("down_with_horses",    ((4., 1.), (2., 1.)), (214., 64.), (-8., -7.)),
+        ("feeding_trough",      ((5., 2.), (2., 1.)), (220., 48.), (2., -44.)),
+        ("fence_h",             ((2., 0.), (3., 1.)), (370., 42.), (0., -51.)),
+        ("fence_v",             ((0., 1.), (1., 3.)), (40., 354.), (7., -6.)),
+        ("garage",              ((6., 4.), (2., 1.)), (218., 74.), (5., -19.)),
+        ("hay_bale_h",          ((3., 2.), (1., 1.)), (76., 64.), (0., -11.)),
+        ("hay_bale_v",          ((4., 2.), (1., 1.)), (74., 54.), (8., -35.)),
+        ("horse_crossing_sign", ((2., 2.), (1., 1.)), (26., 26.), (-3., -57.)),
+        ("house_1",             ((1., 1.), (2., 1.)), (160., 64.), (25., -24.)),
+        ("house_2",             ((4., 4.), (2., 1.)), (206., 86.), (1., -27.)),
+        ("oil_barrel",          ((6., 1.), (1., 1.)), (68., 58.), (1., -42.)),
+        ("outhouse",            ((2., 4.), (1., 1.)), (64., 56.), (1., -43.)),
+        ("portapotty",          ((3., 4.), (1., 1.)), (76., 58.), (0., -33.)),
+        ("stable",              ((1., 0.), (1., 1.)), (102., 52.), (-4., -45.)),
+        ("stable_double",       ((3., 3.), (2., 1.)), (208., 78.), (-1., -19.)),
+        ("stable_wide",         ((5., 3.), (2., 1.)), (206., 72.), (2., -22.)),
+        ("stop_sign",           ((3., 1.), (1., 1.)), (28., 24.), (-1., -55.)),
+        ("yield_sign",          ((1., 2.), (1., 1.)), (26., 26.), (-1., -56.)),
+    ];
+
+    fn new(
+        variant: BuildingVariant,
+        idx: GenerationalIndex,
+        assets: &Assets,
+        physics: &mut Physics,
+        position: Vec2,
+    ) -> Self {
+        let (_, sprite, size, offset) = variant;
+
+        let sprite = assets
+            .buildings
+            .multisprite(sprite.0.into(), sprite.1.into());
+        let collider = physics::cuboid(size.into());
+        let handle = physics.add_static(idx, collider, position);
+
+        Building {
+            sprite,
+            handle,
+            offset: offset.into(),
+        }
+    }
+
     fn horizontal_fence(
         idx: GenerationalIndex,
         assets: &Assets,
         physics: &mut Physics,
         position: Vec2,
     ) -> Self {
-        let offset = vec2(0., -SPRITE_SIZE * 1.5);
-        let size = vec2(SPRITE_SIZE * 4. * 3., SPRITE_SIZE);
-
-        let sprite = assets.buildings.multisprite(vec2(2., 0.), vec2(3., 1.));
-        let collider = physics::cuboid(size);
-        let handle = physics.add_static(idx, collider, position);
-
-        Boundary {
-            sprite,
-            handle,
-            offset,
-        }
+        Building::new(Building::VARIANTS[6], idx, assets, physics, position)
     }
 
     fn vertical_fence(
@@ -82,18 +127,7 @@ impl Boundary {
         physics: &mut Physics,
         position: Vec2,
     ) -> Self {
-        let offset = vec2(SPRITE_SIZE * 0.5, 0.);
-        let size = vec2(SPRITE_SIZE, SPRITE_SIZE * 4. * 3.);
-
-        let sprite = assets.buildings.multisprite(vec2(0., 1.), vec2(1., 3.));
-        let collider = physics::cuboid(size);
-        let handle = physics.add_static(idx, collider, position);
-
-        Boundary {
-            sprite,
-            handle,
-            offset,
-        }
+        Building::new(Building::VARIANTS[7], idx, assets, physics, position)
     }
 
     fn draw(&self, physics: &Physics) {
@@ -141,31 +175,35 @@ struct Animal {
     is_affected_by_death_ball: bool,
 }
 
+// name, sprite
+type AnimalVariant = (&'static str, (f32, f32));
+
 impl Animal {
+    // name, sprite
+    const VARIANTS: [AnimalVariant; 13] = [
+        ("horse", (1., 0.)),
+        ("duck", (2., 0.)),
+        ("snake", (3., 0.)),
+        ("mouse", (4., 0.)),
+        ("rabbit", (5., 0.)),
+        ("kuma", (6., 0.)),
+        ("dog", (7., 0.)),
+        ("cat", (0., 1.)),
+        ("turtle", (1., 1.)),
+        ("snail", (2., 1.)),
+        ("loaf", (4., 5.)),
+        ("poop", (5., 5.)),
+        ("rubber_ducky", (6., 5.)),
+    ];
+
     fn random(
         idx: GenerationalIndex,
         assets: &Assets,
         physics: &mut Physics,
         position: Vec2,
     ) -> Self {
-        let animals = [
-            ("horse", vec2(1., 0.)),
-            ("duck", vec2(2., 0.)),
-            ("snake", vec2(3., 0.)),
-            ("mouse", vec2(4., 0.)),
-            ("rabbit", vec2(5., 0.)),
-            ("kuma", vec2(6., 0.)),
-            ("dog", vec2(7., 0.)),
-            ("cat", vec2(0., 1.)),
-            ("turtle", vec2(1., 1.)),
-            ("snail", vec2(2., 1.)),
-            ("loaf", vec2(4., 5.)),
-            ("poop", vec2(5., 5.)),
-            ("rubber_ducky", vec2(6., 5.)),
-        ];
-        let (_, sprite) = animals[rand::gen_range(0, animals.len())];
-
-        let sprite = assets.animals.sprite(sprite);
+        let (_, sprite) = Animal::VARIANTS[rand::gen_range(0, Animal::VARIANTS.len())];
+        let sprite = assets.animals.sprite(sprite.into());
         let collider = physics::ball(SPRITE_SIZE / 2.).mass(1.);
         let handle = physics.add_dynamic(idx, collider, position);
         Animal {
@@ -215,10 +253,10 @@ async fn main() {
 
         death_ball,
         animals: Entities::new(),
-        boundaries: Entities::new(),
+        buildings: Entities::new(),
     };
 
-    // Create the boundaries
+    // Create the buildings
     for pos in [
         vec2(0., -500.),
         vec2(-344., -500.),
@@ -227,8 +265,8 @@ async fn main() {
         vec2(-344., 500.),
         vec2(344., 500.),
     ] {
-        ctx.boundaries
-            .push(|idx| Boundary::horizontal_fence(idx, &ctx.assets, &mut ctx.physics, pos));
+        ctx.buildings
+            .push(|idx| Building::horizontal_fence(idx, &ctx.assets, &mut ctx.physics, pos));
     }
 
     for pos in [
@@ -239,8 +277,8 @@ async fn main() {
         vec2(530., 0.),
         vec2(530., 344.),
     ] {
-        ctx.boundaries
-            .push(|idx| Boundary::vertical_fence(idx, &ctx.assets, &mut ctx.physics, pos));
+        ctx.buildings
+            .push(|idx| Building::vertical_fence(idx, &ctx.assets, &mut ctx.physics, pos));
     }
 
     // Create ball
@@ -292,8 +330,8 @@ async fn main() {
         for animal in &ctx.animals {
             animal.draw(&ctx.physics);
         }
-        for boundary in &ctx.boundaries {
-            boundary.draw(&ctx.physics);
+        for building in &ctx.buildings {
+            building.draw(&ctx.physics);
         }
 
         if DRAW_COLLIDERS {
