@@ -20,7 +20,7 @@ pub struct Physics {
     joint_set: JointSet,
     ccd_solver: CCDSolver,
 
-    events: Vec<IntersectionEvent>,
+    events: Vec<(ColliderHandle, ColliderHandle)>,
 }
 
 impl Physics {
@@ -55,10 +55,7 @@ impl Physics {
         );
 
         for event in self.events.drain(..) {
-            events.push(PhysicsEvent::from_intersection_event(
-                &self.collider_set,
-                event,
-            ))
+            events.push(PhysicsEvent::from_pair(&self.collider_set, event))
         }
     }
 
@@ -197,7 +194,7 @@ pub struct PhysicsEvent {
 }
 
 impl PhysicsEvent {
-    fn from_intersection_event(collider_set: &ColliderSet, event: IntersectionEvent) -> Self {
+    fn from_pair(collider_set: &ColliderSet, pair: (ColliderHandle, ColliderHandle)) -> Self {
         let to_handle = |collider_handle: ColliderHandle| {
             let collider = &collider_set[collider_handle];
             if let Some(rigid_body_handle) = collider.parent() {
@@ -210,25 +207,29 @@ impl PhysicsEvent {
         };
 
         PhysicsEvent {
-            collider1: to_handle(event.collider1),
-            collider2: to_handle(event.collider2),
+            collider1: to_handle(pair.0),
+            collider2: to_handle(pair.1),
         }
     }
 }
 
 // Despite being single-threaded Rapier2d requires Sync
 // (see: https://github.com/dimforge/rapier/issues/253)
-struct RawEventCollector<'a>(Mutex<&'a mut Vec<IntersectionEvent>>);
+struct RawEventCollector<'a>(Mutex<&'a mut Vec<(ColliderHandle, ColliderHandle)>>);
 
 impl<'a> EventHandler for RawEventCollector<'a> {
     fn handle_intersection_event(&self, event: IntersectionEvent) {
         if event.intersecting {
-            self.0.lock().unwrap().push(event);
+            let a = event.collider1;
+            let b = event.collider2;
+            self.0.lock().unwrap().push((a, b));
         }
     }
 
-    fn handle_contact_event(&self, _event: ContactEvent, _pair: &ContactPair) {
-        todo!()
+    fn handle_contact_event(&self, event: ContactEvent, _pair: &ContactPair) {
+        if let ContactEvent::Started(a, b) = event {
+            self.0.lock().unwrap().push((a, b));
+        }
     }
 }
 
