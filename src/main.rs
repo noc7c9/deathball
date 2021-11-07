@@ -9,7 +9,7 @@ mod spritesheet;
 
 use assets::Assets;
 use camera::Camera;
-use entities::Entities;
+use entities::{Entities, GenerationalIndex};
 use input::Input;
 use physics::{Physics, PhysicsEvent};
 
@@ -28,7 +28,7 @@ pub struct Resources {
     input: Input,
     camera: Camera,
     physics: Physics,
-    physics_events: Vec<PhysicsEvent>,
+    deleted: Vec<GenerationalIndex>,
 }
 
 pub fn window_config() -> Conf {
@@ -47,8 +47,9 @@ async fn main() {
         input: Input::new(),
         camera: Camera::new(),
         physics: Physics::new(),
-        physics_events: Vec::new(),
+        deleted: Vec::new(),
     };
+    let mut physics_events: Vec<PhysicsEvent> = Vec::new();
     let mut death_ball = DeathBall::new(&mut res, Vec2::ZERO);
     let mut animals: Entities<Animal, { Animal::GROUP }> = Entities::new();
     let mut buildings: Entities<Building, { Building::GROUP }> = Entities::new();
@@ -76,6 +77,8 @@ async fn main() {
         buildings.push(|idx| Building::vertical_fence(idx, &mut res, pos));
     }
 
+    buildings.push(|idx| Building::new(Building::VARIANTS[0], idx, &mut res, vec2(0., 0.)));
+
     // Create ball
     for _ in 0..10 {
         let x = rand::gen_range(-450., 450.);
@@ -85,10 +88,24 @@ async fn main() {
     }
 
     loop {
+        let delta = get_frame_time();
+
         // Update entities
         death_ball.update(&mut res);
         for animal in &mut animals {
             animal.update(&mut res, &death_ball);
+        }
+        for building in &mut buildings {
+            building.update(&mut res, delta);
+        }
+
+        // Clear deleted entities
+        for idx in res.deleted.drain(..) {
+            match idx.group() {
+                Animal::GROUP => animals.remove(idx),
+                Building::GROUP => buildings.remove(idx),
+                _ => {}
+            };
         }
 
         // Update subsystems
@@ -97,8 +114,8 @@ async fn main() {
         res.camera.update(&res.input);
         res.camera.enable();
 
-        res.physics.update(&mut res.physics_events);
-        for mut event in res.physics_events.drain(..) {
+        res.physics.update(&mut physics_events);
+        for mut event in physics_events.drain(..) {
             // ensure the event is in a consistent order
             let (idx1, idx2) = {
                 let idx1 = res.physics.get_idx(event.collider1);
@@ -114,6 +131,10 @@ async fn main() {
             if idx1 == DeathBall::IDX && idx2.group() == Animal::GROUP {
                 let animal = &mut animals[idx2];
                 animal.is_affected_by_death_ball(true);
+            } else if idx1.group() == Animal::GROUP && idx2.group() == Building::GROUP {
+                let animal = &mut animals[idx1];
+                let building = &mut buildings[idx2];
+                building.damage(animal.damage);
             }
         }
 

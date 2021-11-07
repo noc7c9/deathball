@@ -41,12 +41,18 @@ pub struct Sprite {
 
 impl Sprite {
     pub fn draw(&self, position: Vec2, rotation: f32) {
+        self.draw_alpha(position, rotation, 1.)
+    }
+
+    pub fn draw_alpha(&self, position: Vec2, rotation: f32, alpha: f32) {
+        let mut color = WHITE;
+        color.a = alpha;
         draw_texture_ex(
             self.sheet.texture,
             // take the position to be the center so that it matches how rapier works
             position.x - self.size.x / 2.,
             position.y - self.size.y / 2.,
-            WHITE,
+            color,
             DrawTextureParams {
                 source: Some(self.source),
                 rotation,

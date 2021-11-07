@@ -11,6 +11,7 @@ use crate::{
 pub struct Animal {
     handle: physics::DynamicHandle,
     sprite: Sprite,
+    pub damage: u8,
     is_affected_by_death_ball: bool,
 }
 
@@ -18,6 +19,7 @@ pub struct Animal {
 struct Variant {
     _name: &'static str,
     sprite: (f32, f32),
+    pub damage: u8,
 }
 
 impl Animal {
@@ -27,65 +29,79 @@ impl Animal {
         Variant {
             _name: "horse",
             sprite: (1., 0.),
+            damage: 1,
         },
         Variant {
             _name: "duck",
             sprite: (2., 0.),
+            damage: 2,
         },
         Variant {
             _name: "snake",
             sprite: (3., 0.),
+            damage: 3,
         },
         Variant {
             _name: "mouse",
             sprite: (4., 0.),
+            damage: 2,
         },
         Variant {
             _name: "rabbit",
             sprite: (5., 0.),
+            damage: 1,
         },
         Variant {
             _name: "kuma",
             sprite: (6., 0.),
+            damage: 4,
         },
         Variant {
             _name: "dog",
             sprite: (7., 0.),
+            damage: 3,
         },
         Variant {
             _name: "cat",
             sprite: (0., 1.),
+            damage: 3,
         },
         Variant {
             _name: "turtle",
             sprite: (1., 1.),
+            damage: 2,
         },
         Variant {
             _name: "snail",
             sprite: (2., 1.),
+            damage: 1,
         },
         Variant {
             _name: "loaf",
             sprite: (4., 5.),
+            damage: 5,
         },
         Variant {
             _name: "poop",
             sprite: (5., 5.),
+            damage: 0,
         },
         Variant {
             _name: "rubber_ducky",
             sprite: (6., 5.),
+            damage: 50,
         },
     ];
 
     pub fn random(idx: GenerationalIndex, res: &mut Resources, position: Vec2) -> Self {
         let variant = Animal::VARIANTS[rand::gen_range(0, Animal::VARIANTS.len())];
         let sprite = res.assets.animals.sprite(variant.sprite.into());
-        let collider = physics::ball(16.).mass(1.);
+        let collider = physics::ball(16.).mass(1.).events(false, true);
         let handle = res.physics.add_dynamic(idx, collider, position);
         Animal {
             sprite,
             handle,
+            damage: variant.damage,
             is_affected_by_death_ball: false,
         }
     }

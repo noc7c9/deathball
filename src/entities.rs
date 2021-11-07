@@ -79,14 +79,13 @@ impl<T, const GROUP: u8> Entities<T, GROUP> {
         }
     }
 
-    pub fn remove(&mut self, idx: GenerationalIndex) -> GenerationalIndex {
+    pub fn remove(&mut self, idx: GenerationalIndex) {
         debug_assert!(
             idx.group() == GROUP,
             "index's group doesn't match entities's group"
         );
         self.vec[idx.index()] = None;
         self.free.push_back(idx);
-        idx
     }
 }
 

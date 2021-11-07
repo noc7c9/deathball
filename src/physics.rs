@@ -105,6 +105,27 @@ impl Physics {
         DynamicHandle(collider_handle, rigid_body_handle)
     }
 
+    pub fn remove(&mut self, handle: impl Into<Handle>) {
+        match handle.into() {
+            Handle::Static(StaticHandle(handle)) | Handle::Sensor(SensorHandle(handle)) => {
+                self.collider_set.remove(
+                    handle,
+                    &mut self.island_manager,
+                    &mut self.rigid_body_set,
+                    false,
+                );
+            }
+            Handle::Dynamic(handle) => {
+                self.rigid_body_set.remove(
+                    handle.1,
+                    &mut self.island_manager,
+                    &mut self.collider_set,
+                    &mut self.joint_set,
+                );
+            }
+        }
+    }
+
     pub fn get_idx(&self, handle: impl Into<Handle>) -> GenerationalIndex {
         let collider = &self.collider_set[handle.into().collision_handle()];
         GenerationalIndex::from_u128(collider.user_data)
