@@ -4,11 +4,24 @@ use crate::{entities::GenerationalIndex, physics, spritesheet::Sprite, Resources
 
 const FADE_TIME: f32 = 1.;
 
+const HEALTH_BAR_FADE_TIME: f32 = 5.;
+const HEALTH_BAR_COLOR: Color = Color::new(0.278, 0.655, 0.149, 1.);
+const HEALTH_BAR_SIZE: (f32, f32) = (128., 16.);
+const HEALTH_BAR_OFFSET: (f32, f32) = (64., 92.);
+const HEALTH_BAR_BORDER_COLOR: Color = Color::new(0.192, 0.192, 0.192, 1.);
+const HEALTH_BAR_BORDER_WIDTH: f32 = 4.;
+
 #[derive(Debug)]
 pub enum Status {
     Indestructible,
-    Destructible { health: u8 },
-    Destroyed { fade_timer: f32 },
+    Destructible {
+        health_bar_fade_timer: f32,
+        health: u8,
+        max_health: u8,
+    },
+    Destroyed {
+        fade_timer: f32,
+    },
 }
 
 pub struct Building {
@@ -210,7 +223,9 @@ impl Building {
                 Status::Indestructible
             } else {
                 Status::Destructible {
+                    health_bar_fade_timer: 0.0,
                     health: variant.health,
+                    max_health: variant.health,
                 }
             },
         }
@@ -225,7 +240,14 @@ impl Building {
     }
 
     pub fn damage(&mut self, damage: u8) {
-        if let Status::Destructible { health } = &mut self.status {
+        if let Status::Destructible {
+            ref mut health_bar_fade_timer,
+            health,
+            ..
+        } = &mut self.status
+        {
+            *health_bar_fade_timer = HEALTH_BAR_FADE_TIME;
+
             *health = health.saturating_sub(damage);
             if *health == 0 {
                 self.status = Status::Destroyed {
@@ -236,26 +258,69 @@ impl Building {
     }
 
     pub fn update(&mut self, res: &mut Resources, delta: f32) {
-        if let Status::Destroyed { ref mut fade_timer } = self.status {
-            *fade_timer -= delta;
-            if *fade_timer < 0. {
-                res.physics.remove(self.handle);
-                res.deleted.push(self.idx);
+        match self.status {
+            Status::Destructible {
+                ref mut health_bar_fade_timer,
+                ..
+            } => {
+                *health_bar_fade_timer -= delta;
             }
+            Status::Destroyed { ref mut fade_timer } => {
+                *fade_timer -= delta;
+                if *fade_timer < 0. {
+                    res.physics.remove(self.handle);
+                    res.deleted.push(self.idx);
+                }
+            }
+            _ => {}
         }
     }
 
     pub fn draw(&self, res: &Resources) {
-        let position = res.physics.get_position(self.handle) + self.offset;
+        let position = res.physics.get_position(self.handle);
         let rotation = res.physics.get_rotation(self.handle);
         match self.status {
-            Status::Indestructible | Status::Destructible { .. } => {
-                self.sprite.draw(position, rotation);
+            Status::Indestructible => self.sprite.draw(position + self.offset, rotation),
+            Status::Destructible {
+                health,
+                max_health,
+                health_bar_fade_timer,
+            } => {
+                self.sprite.draw(position + self.offset, rotation);
+
+                // draw health bar
+                let percent = health as f32 / max_health as f32;
+                let alpha = health_bar_fade_timer / HEALTH_BAR_FADE_TIME;
+                draw_health_bar(position, percent, alpha)
             }
             Status::Destroyed { fade_timer } => {
                 let alpha = fade_timer / FADE_TIME;
-                self.sprite.draw_alpha(position, rotation, alpha);
+                self.sprite
+                    .draw_alpha(position + self.offset, rotation, alpha);
             }
         }
     }
+}
+
+fn draw_health_bar(position: Vec2, percent: f32, alpha: f32) {
+    let x = position.x - HEALTH_BAR_OFFSET.0;
+    let y = position.y - HEALTH_BAR_OFFSET.1;
+    let (w, h) = HEALTH_BAR_SIZE;
+    let bw = HEALTH_BAR_BORDER_WIDTH;
+
+    draw_rectangle_lines(
+        x - bw / 2.,
+        y - bw / 2.,
+        w + bw,
+        h + bw,
+        bw,
+        set_alpha(HEALTH_BAR_BORDER_COLOR, alpha),
+    );
+
+    draw_rectangle(x, y, w * percent, h, set_alpha(HEALTH_BAR_COLOR, alpha));
+}
+
+fn set_alpha(mut base: Color, alpha: f32) -> Color {
+    base.a = alpha;
+    base
 }
