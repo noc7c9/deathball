@@ -1,6 +1,14 @@
 use macroquad::prelude::*;
 
-use crate::{entities::GenerationalIndex, physics, spritesheet::Sprite, Resources};
+use crate::{
+    animals::{Animal, Variant as AnimalVariant},
+    entities::{Entities, GenerationalIndex},
+    physics,
+    spritesheet::Sprite,
+    Resources,
+};
+
+const SPAWN_MAX_OFFSET: f32 = 20.;
 
 const FADE_TIME: f32 = 1.;
 
@@ -30,6 +38,8 @@ pub struct Building {
     sprite: Sprite,
     offset: Vec2,
     status: Status,
+    spawn_count: u8,
+    guaranteed_spawns: [Option<AnimalVariant>; 3],
 }
 
 #[derive(Clone, Copy)]
@@ -39,6 +49,8 @@ pub struct Variant {
     size: (f32, f32),
     offset: (f32, f32),
     health: u8,
+    spawn_count: u8,
+    guaranteed_spawns: [Option<AnimalVariant>; 3],
 }
 
 impl Building {
@@ -51,6 +63,8 @@ impl Building {
             size: (194., 68.),
             offset: (10., -35.),
             health: 200,
+            spawn_count: 3,
+            guaranteed_spawns: [Some(AnimalVariant::Horse), Some(AnimalVariant::Cat), None],
         },
         Variant {
             _name: "car",
@@ -58,6 +72,8 @@ impl Building {
             size: (248., 72.),
             offset: (-5., -38.),
             health: 150,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Cat), None, None],
         },
         Variant {
             _name: "concrete_wall_h",
@@ -65,6 +81,8 @@ impl Building {
             size: (350., 40.),
             offset: (0., -35.),
             health: 0,
+            spawn_count: 0,
+            guaranteed_spawns: [None, None, None],
         },
         Variant {
             _name: "concrete_wall_v",
@@ -72,6 +90,8 @@ impl Building {
             size: (54., 322.),
             offset: (-4., -28.),
             health: 0,
+            spawn_count: 0,
+            guaranteed_spawns: [None, None, None],
         },
         Variant {
             _name: "down_with_horses",
@@ -79,6 +99,8 @@ impl Building {
             size: (214., 64.),
             offset: (-8., -7.),
             health: 100,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Horse), None, None],
         },
         Variant {
             _name: "feeding_trough",
@@ -86,6 +108,8 @@ impl Building {
             size: (220., 48.),
             offset: (2., -44.),
             health: 25,
+            spawn_count: 2,
+            guaranteed_spawns: [Some(AnimalVariant::Horse), None, None],
         },
         Variant {
             _name: "fence_h",
@@ -93,6 +117,8 @@ impl Building {
             size: (370., 42.),
             offset: (0., -51.),
             health: 0,
+            spawn_count: 0,
+            guaranteed_spawns: [None, None, None],
         },
         Variant {
             _name: "fence_v",
@@ -100,6 +126,8 @@ impl Building {
             size: (40., 354.),
             offset: (7., -6.),
             health: 0,
+            spawn_count: 0,
+            guaranteed_spawns: [None, None, None],
         },
         Variant {
             _name: "garage",
@@ -107,6 +135,8 @@ impl Building {
             size: (218., 74.),
             offset: (5., -19.),
             health: 10,
+            spawn_count: 2,
+            guaranteed_spawns: [Some(AnimalVariant::Snake), None, None],
         },
         Variant {
             _name: "hay_bale_h",
@@ -114,6 +144,8 @@ impl Building {
             size: (76., 64.),
             offset: (0., -11.),
             health: 10,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Rabbit), None, None],
         },
         Variant {
             _name: "hay_bale_v",
@@ -121,6 +153,8 @@ impl Building {
             size: (74., 54.),
             offset: (8., -35.),
             health: 10,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Cat), None, None],
         },
         Variant {
             _name: "horse_crossing_sign",
@@ -128,6 +162,8 @@ impl Building {
             size: (26., 26.),
             offset: (-3., -57.),
             health: 25,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Horse), None, None],
         },
         Variant {
             _name: "house_1",
@@ -135,6 +171,8 @@ impl Building {
             size: (160., 64.),
             offset: (25., -24.),
             health: 100,
+            spawn_count: 2,
+            guaranteed_spawns: [Some(AnimalVariant::Duck), None, None],
         },
         Variant {
             _name: "house_2",
@@ -142,6 +180,8 @@ impl Building {
             size: (206., 86.),
             offset: (1., -27.),
             health: 100,
+            spawn_count: 2,
+            guaranteed_spawns: [Some(AnimalVariant::Cat), None, None],
         },
         Variant {
             _name: "oil_barrel",
@@ -149,6 +189,8 @@ impl Building {
             size: (68., 58.),
             offset: (1., -42.),
             health: 100,
+            spawn_count: 2,
+            guaranteed_spawns: [Some(AnimalVariant::Kuma), None, None],
         },
         Variant {
             _name: "outhouse",
@@ -156,6 +198,8 @@ impl Building {
             size: (64., 56.),
             offset: (1., -43.),
             health: 10,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Poop), None, None],
         },
         Variant {
             _name: "portapotty",
@@ -163,6 +207,8 @@ impl Building {
             size: (76., 58.),
             offset: (0., -33.),
             health: 10,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Poop), None, None],
         },
         Variant {
             _name: "stable",
@@ -170,6 +216,8 @@ impl Building {
             size: (102., 52.),
             offset: (-4., -45.),
             health: 10,
+            spawn_count: 2,
+            guaranteed_spawns: [Some(AnimalVariant::Horse), None, None],
         },
         Variant {
             _name: "stable_double",
@@ -177,6 +225,8 @@ impl Building {
             size: (208., 78.),
             offset: (-1., -19.),
             health: 100,
+            spawn_count: 3,
+            guaranteed_spawns: [Some(AnimalVariant::Horse), Some(AnimalVariant::Horse), None],
         },
         Variant {
             _name: "stable_wide",
@@ -184,6 +234,8 @@ impl Building {
             size: (206., 72.),
             offset: (2., -22.),
             health: 100,
+            spawn_count: 3,
+            guaranteed_spawns: [Some(AnimalVariant::Horse), Some(AnimalVariant::Horse), None],
         },
         Variant {
             _name: "stop_sign",
@@ -191,6 +243,8 @@ impl Building {
             size: (28., 24.),
             offset: (-1., -55.),
             health: 10,
+            spawn_count: 2,
+            guaranteed_spawns: [Some(AnimalVariant::Dog), None, None],
         },
         Variant {
             _name: "yield_sign",
@@ -198,6 +252,8 @@ impl Building {
             size: (26., 26.),
             offset: (-1., -56.),
             health: 10,
+            spawn_count: 1,
+            guaranteed_spawns: [Some(AnimalVariant::Cat), None, None],
         },
     ];
 
@@ -228,6 +284,8 @@ impl Building {
                     max_health: variant.health,
                 }
             },
+            spawn_count: variant.spawn_count,
+            guaranteed_spawns: variant.guaranteed_spawns,
         }
     }
 
@@ -257,7 +315,12 @@ impl Building {
         }
     }
 
-    pub fn update(&mut self, res: &mut Resources, delta: f32) {
+    pub fn update(
+        &mut self,
+        res: &mut Resources,
+        delta: f32,
+        animals: &mut Entities<Animal, { Animal::GROUP }>,
+    ) {
         match self.status {
             Status::Destructible {
                 ref mut health_bar_fade_timer,
@@ -268,8 +331,27 @@ impl Building {
             Status::Destroyed { ref mut fade_timer } => {
                 *fade_timer -= delta;
                 if *fade_timer < 0. {
+                    let origin = res.physics.get_position(self.handle);
+
                     res.physics.remove(self.handle);
                     res.deleted.push(self.idx);
+
+                    // spawn random animals
+                    let mut remaining = self.spawn_count as i8;
+                    for variant in self.guaranteed_spawns {
+                        if let Some(variant) = variant {
+                            remaining -= 1;
+                            let position = random_position(origin, SPAWN_MAX_OFFSET);
+                            animals.push(|idx| Animal::new(variant, idx, res, position));
+                        } else {
+                            break;
+                        }
+                    }
+                    while remaining > 0 {
+                        remaining -= 1;
+                        let position = random_position(origin, SPAWN_MAX_OFFSET);
+                        animals.push(|idx| Animal::random(idx, res, position));
+                    }
                 }
             }
             _ => {}
@@ -323,4 +405,10 @@ fn draw_health_bar(position: Vec2, percent: f32, alpha: f32) {
 fn set_alpha(mut base: Color, alpha: f32) -> Color {
     base.a = alpha;
     base
+}
+
+fn random_position(center: Vec2, offset: f32) -> Vec2 {
+    let dx = rand::gen_range(-offset, offset);
+    let dy = rand::gen_range(-offset, offset);
+    center + (dx, dy).into()
 }

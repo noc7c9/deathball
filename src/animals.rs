@@ -16,85 +16,112 @@ pub struct Animal {
 }
 
 #[derive(Clone, Copy)]
-struct Variant {
-    _name: &'static str,
+pub enum Variant {
+    Cat,
+    Dog,
+    Duck,
+    Horse,
+    Kuma,
+    Loaf,
+    Mouse,
+    Poop,
+    Rabbit,
+    RubberDucky,
+    Snail,
+    Snake,
+    Turtle,
+}
+
+struct VariantData {
     sprite: (f32, f32),
-    pub damage: u8,
+    damage: u8,
+}
+
+impl Variant {
+    fn to_data(self) -> VariantData {
+        match self {
+            Variant::Cat => VariantData {
+                sprite: (0., 1.),
+                damage: 3,
+            },
+            Variant::Dog => VariantData {
+                sprite: (7., 0.),
+                damage: 3,
+            },
+            Variant::Duck => VariantData {
+                sprite: (2., 0.),
+                damage: 2,
+            },
+            Variant::Horse => VariantData {
+                sprite: (1., 0.),
+                damage: 1,
+            },
+            Variant::Kuma => VariantData {
+                sprite: (6., 0.),
+                damage: 4,
+            },
+            Variant::Loaf => VariantData {
+                sprite: (4., 5.),
+                damage: 5,
+            },
+            Variant::Mouse => VariantData {
+                sprite: (4., 0.),
+                damage: 2,
+            },
+            Variant::Poop => VariantData {
+                sprite: (5., 5.),
+                damage: 0,
+            },
+            Variant::Rabbit => VariantData {
+                sprite: (5., 0.),
+                damage: 1,
+            },
+            Variant::RubberDucky => VariantData {
+                sprite: (6., 5.),
+                damage: 50,
+            },
+            Variant::Snail => VariantData {
+                sprite: (2., 1.),
+                damage: 1,
+            },
+            Variant::Snake => VariantData {
+                sprite: (3., 0.),
+                damage: 3,
+            },
+            Variant::Turtle => VariantData {
+                sprite: (1., 1.),
+                damage: 2,
+            },
+        }
+    }
 }
 
 impl Animal {
     pub const GROUP: u8 = 1;
 
     const VARIANTS: [Variant; 13] = [
-        Variant {
-            _name: "horse",
-            sprite: (1., 0.),
-            damage: 1,
-        },
-        Variant {
-            _name: "duck",
-            sprite: (2., 0.),
-            damage: 2,
-        },
-        Variant {
-            _name: "snake",
-            sprite: (3., 0.),
-            damage: 3,
-        },
-        Variant {
-            _name: "mouse",
-            sprite: (4., 0.),
-            damage: 2,
-        },
-        Variant {
-            _name: "rabbit",
-            sprite: (5., 0.),
-            damage: 1,
-        },
-        Variant {
-            _name: "kuma",
-            sprite: (6., 0.),
-            damage: 4,
-        },
-        Variant {
-            _name: "dog",
-            sprite: (7., 0.),
-            damage: 3,
-        },
-        Variant {
-            _name: "cat",
-            sprite: (0., 1.),
-            damage: 3,
-        },
-        Variant {
-            _name: "turtle",
-            sprite: (1., 1.),
-            damage: 2,
-        },
-        Variant {
-            _name: "snail",
-            sprite: (2., 1.),
-            damage: 1,
-        },
-        Variant {
-            _name: "loaf",
-            sprite: (4., 5.),
-            damage: 5,
-        },
-        Variant {
-            _name: "poop",
-            sprite: (5., 5.),
-            damage: 0,
-        },
-        Variant {
-            _name: "rubber_ducky",
-            sprite: (6., 5.),
-            damage: 50,
-        },
+        Variant::Cat,
+        Variant::Dog,
+        Variant::Duck,
+        Variant::Horse,
+        Variant::Kuma,
+        Variant::Loaf,
+        Variant::Mouse,
+        Variant::Poop,
+        Variant::Rabbit,
+        Variant::RubberDucky,
+        Variant::Snail,
+        Variant::Snake,
+        Variant::Turtle,
     ];
 
-    pub fn random(idx: GenerationalIndex, res: &mut Resources, position: Vec2) -> Self {
-        let variant = Animal::VARIANTS[rand::gen_range(0, Animal::VARIANTS.len())];
+    pub fn new(
+        variant: Variant,
+        idx: GenerationalIndex,
+        res: &mut Resources,
+        position: Vec2,
+    ) -> Self {
+        let variant = variant.to_data();
         let sprite = res.assets.animals.sprite(variant.sprite.into());
         let collider = physics::ball(16.).mass(1.).events(false, true);
         let handle = res.physics.add_dynamic(idx, collider, position);
@@ -104,6 +131,11 @@ impl Animal {
             damage: variant.damage,
             is_affected_by_death_ball: false,
         }
+    }
+
+    pub fn random(idx: GenerationalIndex, res: &mut Resources, position: Vec2) -> Self {
+        let variant = Animal::VARIANTS[rand::gen_range(0, Animal::VARIANTS.len())];
+        Animal::new(variant, idx, res, position)
     }
 
     pub fn is_affected_by_death_ball(&mut self, value: bool) {

@@ -96,7 +96,7 @@ async fn main() {
             animal.update(&mut res, &death_ball);
         }
         for building in &mut buildings {
-            building.update(&mut res, delta);
+            building.update(&mut res, delta, &mut animals);
         }
 
         // Clear deleted entities
