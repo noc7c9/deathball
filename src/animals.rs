@@ -1,11 +1,7 @@
 use macroquad::prelude::*;
 
 use crate::{
-    death_ball::DeathBall,
-    entities::GenerationalIndex,
-    physics::{self},
-    spritesheet::Sprite,
-    Resources,
+    death_ball::DeathBall, entities::GenerationalIndex, physics, spritesheet::Sprite, Resources,
 };
 
 pub struct Animal {

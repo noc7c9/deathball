@@ -55,7 +55,11 @@ impl Physics {
         );
 
         for event in self.events.drain(..) {
-            events.push(PhysicsEvent::from_pair(&self.collider_set, event))
+            events.push(PhysicsEvent::from_pair(
+                &self.rigid_body_set,
+                &self.collider_set,
+                event,
+            ))
         }
     }
 
@@ -105,6 +109,27 @@ impl Physics {
         DynamicHandle(collider_handle, rigid_body_handle)
     }
 
+    pub fn add_kinematic(
+        &mut self,
+        idx: GenerationalIndex,
+        collider: MyColliderBuilder,
+        position: Vec2,
+    ) -> KinematicHandle {
+        let collider = collider.0.user_data(idx.to_u128()).build();
+        let rigid_body = RigidBodyBuilder::new_kinematic_velocity_based()
+            .translation(position.into())
+            .build();
+
+        let rigid_body_handle = self.rigid_body_set.insert(rigid_body);
+
+        let collider_handle = self.collider_set.insert_with_parent(
+            collider,
+            rigid_body_handle,
+            &mut self.rigid_body_set,
+        );
+        KinematicHandle(collider_handle, rigid_body_handle)
+    }
+
     pub fn remove(&mut self, handle: impl Into<Handle>) {
         match handle.into() {
             Handle::Static(StaticHandle(handle)) | Handle::Sensor(SensorHandle(handle)) => {
@@ -115,9 +140,10 @@ impl Physics {
                     false,
                 );
             }
-            Handle::Dynamic(handle) => {
+            Handle::Dynamic(DynamicHandle(_, handle))
+            | Handle::Kinematic(KinematicHandle(_, handle)) => {
                 self.rigid_body_set.remove(
-                    handle.1,
+                    handle,
                     &mut self.island_manager,
                     &mut self.collider_set,
                     &mut self.joint_set,
@@ -126,61 +152,37 @@ impl Physics {
         }
     }
 
-    pub fn get_idx(&self, handle: impl Into<Handle>) -> GenerationalIndex {
-        let collider = &self.collider_set[handle.into().collision_handle()];
+    pub fn get_idx(&self, handle: impl Into<ColliderHandle>) -> GenerationalIndex {
+        let collider = &self.collider_set[handle.into()];
         GenerationalIndex::from_u128(collider.user_data)
     }
 
-    pub fn set_position(&mut self, handle: impl Into<Handle>, position: Vec2) {
-        match handle.into() {
-            Handle::Static(StaticHandle(handle)) | Handle::Sensor(SensorHandle(handle)) => {
-                let body = &mut self.collider_set[handle];
-                body.set_translation(position.into());
-            }
-            Handle::Dynamic(handle) => {
-                let body = &mut self.rigid_body_set[handle.1];
-                body.set_translation(position.into(), true);
-            }
-        }
+    pub fn set_position(&mut self, handle: impl Into<ColliderHandle>, position: Vec2) {
+        let body = &mut self.collider_set[handle.into()];
+        body.set_translation(position.into());
     }
 
-    pub fn get_position(&self, handle: impl Into<Handle>) -> Vec2 {
-        match handle.into() {
-            Handle::Static(StaticHandle(handle)) | Handle::Sensor(SensorHandle(handle)) => {
-                let body = &self.collider_set[handle];
-                (*body.translation()).into()
-            }
-            Handle::Dynamic(handle) => {
-                let body = &self.rigid_body_set[handle.1];
-                (*body.translation()).into()
-            }
-        }
+    pub fn get_position(&self, handle: impl Into<ColliderHandle>) -> Vec2 {
+        let body = &self.collider_set[handle.into()];
+        (*body.translation()).into()
     }
 
-    pub fn get_rotation(&self, handle: impl Into<Handle>) -> f32 {
+    pub fn get_rotation(&self, handle: impl Into<ColliderHandle>) -> f32 {
         use nalgebra::ComplexField;
-        match handle.into() {
-            Handle::Static(StaticHandle(handle)) | Handle::Sensor(SensorHandle(handle)) => {
-                let body = &self.collider_set[handle.0];
-                body.rotation().to_polar().1
-            }
-            Handle::Dynamic(handle) => {
-                let body = &self.rigid_body_set[handle.1];
-                body.rotation().to_polar().1
-            }
-        }
+        let body = &self.collider_set[handle.into()];
+        body.rotation().to_polar().1
     }
 
-    pub fn set_linear_velocity(&mut self, handle: DynamicHandle, linvel: Vec2) {
-        self.rigid_body_set[handle.1].set_linvel(linvel.into(), true);
-    }
+    // pub fn set_linear_velocity(&mut self, handle: impl Into<RigidBodyHandle>, linvel: Vec2) {
+    //     self.rigid_body_set[handle.into()].set_linvel(linvel.into(), true);
+    // }
 
-    pub fn set_angular_velocity(&mut self, handle: DynamicHandle, angvel: f32) {
-        self.rigid_body_set[handle.1].set_angvel(angvel, true);
-    }
+    // pub fn set_angular_velocity(&mut self, handle: impl Into<RigidBodyHandle>, angvel: f32) {
+    //     self.rigid_body_set[handle.into()].set_angvel(angvel, true);
+    // }
 
-    pub fn apply_impulse(&mut self, handle: DynamicHandle, impulse: Vec2) {
-        self.rigid_body_set[handle.1].apply_impulse(impulse.into(), true);
+    pub fn apply_impulse(&mut self, handle: impl Into<RigidBodyHandle>, impulse: Vec2) {
+        self.rigid_body_set[handle.into()].apply_impulse(impulse.into(), true);
     }
 
     pub fn draw_colliders(&self) {
@@ -215,11 +217,24 @@ pub struct PhysicsEvent {
 }
 
 impl PhysicsEvent {
-    fn from_pair(collider_set: &ColliderSet, pair: (ColliderHandle, ColliderHandle)) -> Self {
+    fn from_pair(
+        rigid_body_set: &RigidBodySet,
+        collider_set: &ColliderSet,
+        pair: (ColliderHandle, ColliderHandle),
+    ) -> Self {
         let to_handle = |collider_handle: ColliderHandle| {
             let collider = &collider_set[collider_handle];
             if let Some(rigid_body_handle) = collider.parent() {
-                Handle::Dynamic(DynamicHandle(collider_handle, rigid_body_handle))
+                let rigid_body = &rigid_body_set[rigid_body_handle];
+                match rigid_body.body_type() {
+                    RigidBodyType::Dynamic => {
+                        Handle::Dynamic(DynamicHandle(collider_handle, rigid_body_handle))
+                    }
+                    RigidBodyType::KinematicVelocityBased => {
+                        Handle::Kinematic(KinematicHandle(collider_handle, rigid_body_handle))
+                    }
+                    _ => panic!(),
+                }
             } else if collider.is_sensor() {
                 Handle::Sensor(SensorHandle(collider_handle))
             } else {
@@ -298,19 +313,60 @@ pub struct SensorHandle(ColliderHandle);
 pub struct DynamicHandle(ColliderHandle, RigidBodyHandle);
 
 #[derive(Clone, Copy)]
+pub struct KinematicHandle(ColliderHandle, RigidBodyHandle);
+
+#[derive(Clone, Copy)]
 pub enum Handle {
     Static(StaticHandle),
     Sensor(SensorHandle),
     Dynamic(DynamicHandle),
+    Kinematic(KinematicHandle),
 }
 
-impl Handle {
-    fn collision_handle(self) -> ColliderHandle {
-        match self {
-            Handle::Static(StaticHandle(handle)) => handle,
-            Handle::Sensor(SensorHandle(handle)) => handle,
-            Handle::Dynamic(DynamicHandle(handle, ..)) => handle,
+impl From<Handle> for ColliderHandle {
+    fn from(handle: Handle) -> ColliderHandle {
+        match handle {
+            Handle::Static(handle) => handle.into(),
+            Handle::Sensor(handle) => handle.into(),
+            Handle::Dynamic(handle) => handle.into(),
+            Handle::Kinematic(handle) => handle.into(),
         }
+    }
+}
+
+impl From<StaticHandle> for ColliderHandle {
+    fn from(handle: StaticHandle) -> ColliderHandle {
+        handle.0
+    }
+}
+
+impl From<SensorHandle> for ColliderHandle {
+    fn from(handle: SensorHandle) -> ColliderHandle {
+        handle.0
+    }
+}
+
+impl From<DynamicHandle> for ColliderHandle {
+    fn from(handle: DynamicHandle) -> ColliderHandle {
+        handle.0
+    }
+}
+
+impl From<KinematicHandle> for ColliderHandle {
+    fn from(handle: KinematicHandle) -> ColliderHandle {
+        handle.0
+    }
+}
+
+impl From<DynamicHandle> for RigidBodyHandle {
+    fn from(handle: DynamicHandle) -> RigidBodyHandle {
+        handle.1
+    }
+}
+
+impl From<KinematicHandle> for RigidBodyHandle {
+    fn from(handle: KinematicHandle) -> RigidBodyHandle {
+        handle.1
     }
 }
 
@@ -329,5 +385,11 @@ impl From<SensorHandle> for Handle {
 impl From<DynamicHandle> for Handle {
     fn from(handle: DynamicHandle) -> Handle {
         Handle::Dynamic(handle)
+    }
+}
+
+impl From<KinematicHandle> for Handle {
+    fn from(handle: KinematicHandle) -> Handle {
+        Handle::Kinematic(handle)
     }
 }

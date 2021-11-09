@@ -3,6 +3,7 @@ use macroquad::prelude::*;
 use crate::{
     animals::{Animal, Variant as AnimalVariant},
     entities::{Entities, GenerationalIndex},
+    health_bar::HealthBar,
     physics,
     spritesheet::Sprite,
     Resources,
@@ -12,18 +13,13 @@ const SPAWN_MAX_OFFSET: f32 = 20.;
 
 const FADE_TIME: f32 = 1.;
 
-const HEALTH_BAR_FADE_TIME: f32 = 5.;
-const HEALTH_BAR_COLOR: Color = Color::new(0.278, 0.655, 0.149, 1.);
 const HEALTH_BAR_SIZE: (f32, f32) = (128., 16.);
 const HEALTH_BAR_OFFSET: (f32, f32) = (64., 92.);
-const HEALTH_BAR_BORDER_COLOR: Color = Color::new(0.192, 0.192, 0.192, 1.);
-const HEALTH_BAR_BORDER_WIDTH: f32 = 4.;
 
-#[derive(Debug)]
 pub enum Status {
     Indestructible,
     Destructible {
-        health_bar_fade_timer: f32,
+        health_bar: HealthBar,
         health: u8,
         max_health: u8,
     },
@@ -279,7 +275,7 @@ impl Building {
                 Status::Indestructible
             } else {
                 Status::Destructible {
-                    health_bar_fade_timer: 0.0,
+                    health_bar: HealthBar::new(HEALTH_BAR_SIZE.into(), HEALTH_BAR_OFFSET.into()),
                     health: variant.health,
                     max_health: variant.health,
                 }
@@ -299,12 +295,12 @@ impl Building {
 
     pub fn damage(&mut self, damage: u8) {
         if let Status::Destructible {
-            ref mut health_bar_fade_timer,
+            ref mut health_bar,
             health,
             ..
         } = &mut self.status
         {
-            *health_bar_fade_timer = HEALTH_BAR_FADE_TIME;
+            health_bar.reset_fade();
 
             *health = health.saturating_sub(damage);
             if *health == 0 {
@@ -323,11 +319,8 @@ impl Building {
     ) {
         match self.status {
             Status::Destructible {
-                ref mut health_bar_fade_timer,
-                ..
-            } => {
-                *health_bar_fade_timer -= delta;
-            }
+                ref mut health_bar, ..
+            } => health_bar.update(delta),
             Status::Destroyed { ref mut fade_timer } => {
                 *fade_timer -= delta;
                 if *fade_timer < 0. {
@@ -366,14 +359,10 @@ impl Building {
             Status::Destructible {
                 health,
                 max_health,
-                health_bar_fade_timer,
+                ref health_bar,
             } => {
                 self.sprite.draw(position + self.offset, rotation);
-
-                // draw health bar
-                let percent = health as f32 / max_health as f32;
-                let alpha = health_bar_fade_timer / HEALTH_BAR_FADE_TIME;
-                draw_health_bar(position, percent, alpha)
+                health_bar.draw(position, health as f32 / max_health as f32);
             }
             Status::Destroyed { fade_timer } => {
                 let alpha = fade_timer / FADE_TIME;
@@ -382,29 +371,6 @@ impl Building {
             }
         }
     }
-}
-
-fn draw_health_bar(position: Vec2, percent: f32, alpha: f32) {
-    let x = position.x - HEALTH_BAR_OFFSET.0;
-    let y = position.y - HEALTH_BAR_OFFSET.1;
-    let (w, h) = HEALTH_BAR_SIZE;
-    let bw = HEALTH_BAR_BORDER_WIDTH;
-
-    draw_rectangle_lines(
-        x - bw / 2.,
-        y - bw / 2.,
-        w + bw,
-        h + bw,
-        bw,
-        set_alpha(HEALTH_BAR_BORDER_COLOR, alpha),
-    );
-
-    draw_rectangle(x, y, w * percent, h, set_alpha(HEALTH_BAR_COLOR, alpha));
-}
-
-fn set_alpha(mut base: Color, alpha: f32) -> Color {
-    base.a = alpha;
-    base
 }
 
 fn random_position(center: Vec2, offset: f32) -> Vec2 {
