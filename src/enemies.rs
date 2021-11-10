@@ -50,7 +50,7 @@ impl Enemy {
         position: Vec2,
     ) -> Self {
         let sprite = res.assets.enemies.sprite(variant.sprite.into());
-        let collider = physics::ball(16.).mass(1.).events(false, true);
+        let collider = physics::ball(16.).mass(1.).contact_events();
         let handle = res.physics.add_kinematic(idx, collider, position);
         Enemy {
             idx,

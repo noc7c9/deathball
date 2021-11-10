@@ -11,7 +11,7 @@ impl DeathBall {
     pub const IDX: GenerationalIndex = GenerationalIndex::single(0);
 
     pub fn new(res: &mut Resources, position: Vec2) -> Self {
-        let collider = physics::ball(16.).mass(1.).events(true, false);
+        let collider = physics::ball(16.).mass(1.).intersection_events();
         let handle = res.physics.add_sensor(DeathBall::IDX, collider, position);
         DeathBall {
             handle,

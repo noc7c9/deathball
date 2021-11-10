@@ -266,15 +266,14 @@ impl<'a> EventHandler for RawEventCollector<'a> {
 pub struct MyColliderBuilder(ColliderBuilder);
 
 impl MyColliderBuilder {
-    pub fn events(self, intersection_events: bool, contact_events: bool) -> Self {
-        let mut flags = ActiveEvents::empty();
-        if intersection_events {
-            flags |= ActiveEvents::INTERSECTION_EVENTS;
-        }
-        if contact_events {
-            flags |= ActiveEvents::CONTACT_EVENTS;
-        }
-        MyColliderBuilder(self.0.active_events(flags))
+    pub fn intersection_events(mut self) -> Self {
+        self.0.active_events |= ActiveEvents::INTERSECTION_EVENTS;
+        self
+    }
+
+    pub fn contact_events(mut self) -> Self {
+        self.0.active_events |= ActiveEvents::CONTACT_EVENTS;
+        self
     }
 
     pub fn mass(mut self, mass: f32) -> Self {
