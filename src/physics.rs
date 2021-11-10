@@ -188,14 +188,28 @@ impl Physics {
     pub fn draw_colliders(&self) {
         use nalgebra::ComplexField;
 
-        const COLOR: Color = Color::new(0.0, 0.47, 0.95, 0.5);
+        const COLOR_STATIC: Color = Color::new(0.95, 0.0, 0.33, 0.333); // red
+        const COLOR_SENSOR: Color = Color::new(0.95, 0.76, 0.0, 0.333); // yellow
+        const COLOR_DYNAMIC: Color = Color::new(0.0, 0.47, 0.95, 0.333); // blue
+        const COLOR_KINEMATIC: Color = Color::new(0.0, 0.95, 0.44, 0.333); // green
 
-        for (_, collider) in self.collider_set.iter() {
+        for (handle, collider) in self.collider_set.iter() {
             let translation = collider.translation();
+
+            let color = match Handle::from_collider_handle(
+                &self.rigid_body_set,
+                &self.collider_set,
+                handle,
+            ) {
+                Handle::Static(_) => COLOR_STATIC,
+                Handle::Sensor(_) => COLOR_SENSOR,
+                Handle::Dynamic(_) => COLOR_DYNAMIC,
+                Handle::Kinematic(_) => COLOR_KINEMATIC,
+            };
 
             match collider.shape().as_typed_shape() {
                 TypedShape::Ball(ball) => {
-                    draw_circle(translation.x, translation.y, ball.radius, COLOR);
+                    draw_circle(translation.x, translation.y, ball.radius, color);
                 }
                 TypedShape::Cuboid(cuboid) => {
                     if collider.rotation().to_polar().1 != 0. {
@@ -203,7 +217,7 @@ impl Physics {
                     }
                     let size = cuboid.half_extents * 2.;
                     let translation = translation - cuboid.half_extents;
-                    draw_rectangle(translation.x, translation.y, size.x, size.y, COLOR);
+                    draw_rectangle(translation.x, translation.y, size.x, size.y, color);
                 }
                 _ => panic!("drawing shape is unsupported"),
             }
@@ -222,29 +236,9 @@ impl PhysicsEvent {
         collider_set: &ColliderSet,
         pair: (ColliderHandle, ColliderHandle),
     ) -> Self {
-        let to_handle = |collider_handle: ColliderHandle| {
-            let collider = &collider_set[collider_handle];
-            if let Some(rigid_body_handle) = collider.parent() {
-                let rigid_body = &rigid_body_set[rigid_body_handle];
-                match rigid_body.body_type() {
-                    RigidBodyType::Dynamic => {
-                        Handle::Dynamic(DynamicHandle(collider_handle, rigid_body_handle))
-                    }
-                    RigidBodyType::KinematicVelocityBased => {
-                        Handle::Kinematic(KinematicHandle(collider_handle, rigid_body_handle))
-                    }
-                    _ => panic!(),
-                }
-            } else if collider.is_sensor() {
-                Handle::Sensor(SensorHandle(collider_handle))
-            } else {
-                Handle::Static(StaticHandle(collider_handle))
-            }
-        };
-
         PhysicsEvent {
-            collider1: to_handle(pair.0),
-            collider2: to_handle(pair.1),
+            collider1: Handle::from_collider_handle(rigid_body_set, collider_set, pair.0),
+            collider2: Handle::from_collider_handle(rigid_body_set, collider_set, pair.1),
         }
     }
 }
@@ -321,6 +315,32 @@ pub enum Handle {
     Sensor(SensorHandle),
     Dynamic(DynamicHandle),
     Kinematic(KinematicHandle),
+}
+
+impl Handle {
+    fn from_collider_handle(
+        rigid_body_set: &RigidBodySet,
+        collider_set: &ColliderSet,
+        collider_handle: ColliderHandle,
+    ) -> Self {
+        let collider = &collider_set[collider_handle];
+        if let Some(rigid_body_handle) = collider.parent() {
+            let rigid_body = &rigid_body_set[rigid_body_handle];
+            match rigid_body.body_type() {
+                RigidBodyType::Dynamic => {
+                    Handle::Dynamic(DynamicHandle(collider_handle, rigid_body_handle))
+                }
+                RigidBodyType::KinematicVelocityBased => {
+                    Handle::Kinematic(KinematicHandle(collider_handle, rigid_body_handle))
+                }
+                _ => panic!(),
+            }
+        } else if collider.is_sensor() {
+            Handle::Sensor(SensorHandle(collider_handle))
+        } else {
+            Handle::Static(StaticHandle(collider_handle))
+        }
+    }
 }
 
 impl From<Handle> for ColliderHandle {
