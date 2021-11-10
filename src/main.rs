@@ -125,18 +125,9 @@ async fn main() {
         res.camera.enable();
 
         res.physics.update(&mut physics_events);
-        for mut event in physics_events.drain(..) {
-            // ensure the event is in a consistent order
-            let (idx1, idx2) = {
-                let idx1 = res.physics.get_idx(event.collider1);
-                let idx2 = res.physics.get_idx(event.collider2);
-                if idx2.group() < idx1.group() {
-                    std::mem::swap(&mut event.collider1, &mut event.collider2);
-                    (idx2, idx1)
-                } else {
-                    (idx1, idx2)
-                }
-            };
+        for event in physics_events.drain(..) {
+            let idx1 = res.physics.get_idx(event.collider1);
+            let idx2 = res.physics.get_idx(event.collider2);
 
             // DeathBall with Animal
             if idx1 == DeathBall::IDX && idx2.group() == Animal::GROUP {

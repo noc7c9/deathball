@@ -20,7 +20,7 @@ pub struct Physics {
     joint_set: JointSet,
     ccd_solver: CCDSolver,
 
-    events: Vec<(ColliderHandle, ColliderHandle)>,
+    events: Vec<(PhysicsEventKind, ColliderHandle, ColliderHandle)>,
 }
 
 impl Physics {
@@ -54,11 +54,13 @@ impl Physics {
             &RawEventCollector(Mutex::new(&mut self.events)),
         );
 
-        for event in self.events.drain(..) {
-            events.push(PhysicsEvent::from_pair(
+        for (kind, handle1, handle2) in self.events.drain(..) {
+            events.push(PhysicsEvent::new(
                 &self.rigid_body_set,
                 &self.collider_set,
-                event,
+                kind,
+                handle1,
+                handle2,
             ))
         }
     }
@@ -225,40 +227,66 @@ impl Physics {
     }
 }
 
+pub enum PhysicsEventKind {
+    IntersectStart,
+    IntersectEnd,
+    ContactStart,
+    ContactEnd,
+}
+
 pub struct PhysicsEvent {
+    pub kind: PhysicsEventKind,
     pub collider1: Handle,
     pub collider2: Handle,
 }
 
 impl PhysicsEvent {
-    fn from_pair(
+    fn new(
         rigid_body_set: &RigidBodySet,
         collider_set: &ColliderSet,
-        pair: (ColliderHandle, ColliderHandle),
+        kind: PhysicsEventKind,
+        mut handle1: ColliderHandle,
+        mut handle2: ColliderHandle,
     ) -> Self {
+        let datum1 = collider_set[handle1].user_data;
+        let datum2 = collider_set[handle2].user_data;
+
+        // ensure the event pair is in a consistent order every time
+        if datum2 < datum1 {
+            std::mem::swap(&mut handle1, &mut handle2);
+        }
+
         PhysicsEvent {
-            collider1: Handle::from_collider_handle(rigid_body_set, collider_set, pair.0),
-            collider2: Handle::from_collider_handle(rigid_body_set, collider_set, pair.1),
+            kind,
+            collider1: Handle::from_collider_handle(rigid_body_set, collider_set, handle1),
+            collider2: Handle::from_collider_handle(rigid_body_set, collider_set, handle2),
         }
     }
 }
 
 // Despite being single-threaded Rapier2d requires Sync
 // (see: https://github.com/dimforge/rapier/issues/253)
-struct RawEventCollector<'a>(Mutex<&'a mut Vec<(ColliderHandle, ColliderHandle)>>);
+struct RawEventCollector<'a>(
+    Mutex<&'a mut Vec<(PhysicsEventKind, ColliderHandle, ColliderHandle)>>,
+);
 
 impl<'a> EventHandler for RawEventCollector<'a> {
     fn handle_intersection_event(&self, event: IntersectionEvent) {
-        if event.intersecting {
-            let a = event.collider1;
-            let b = event.collider2;
-            self.0.lock().unwrap().push((a, b));
-        }
+        let a = event.collider1;
+        let b = event.collider2;
+        let kind = if event.intersecting {
+            PhysicsEventKind::IntersectStart
+        } else {
+            PhysicsEventKind::IntersectEnd
+        };
+        self.0.lock().unwrap().push((kind, a, b));
     }
 
     fn handle_contact_event(&self, event: ContactEvent, _pair: &ContactPair) {
-        if let ContactEvent::Started(a, b) = event {
-            self.0.lock().unwrap().push((a, b));
+        let mut events = self.0.lock().unwrap();
+        match event {
+            ContactEvent::Started(a, b) => events.push((PhysicsEventKind::ContactStart, a, b)),
+            ContactEvent::Stopped(a, b) => events.push((PhysicsEventKind::ContactEnd, a, b)),
         }
     }
 }
