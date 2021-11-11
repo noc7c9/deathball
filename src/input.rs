@@ -51,7 +51,7 @@ impl Input {
         if is_key_down(KeyCode::D) {
             delta.x += 1.0;
         }
-        delta.try_normalize().unwrap_or(Vec2::ZERO)
+        delta.normalize_or_zero()
     }
 
     pub fn get_mouse_right_button_drag(&self) -> Option<MouseDrag> {
