@@ -71,7 +71,7 @@ impl Physics {
         collider: MyColliderBuilder,
         position: Vec2,
     ) -> StaticHandle {
-        let mut collider = collider.0.user_data(idx.to_u128()).build();
+        let mut collider = collider.inner.user_data(idx.to_u128()).build();
         collider.set_translation(position.into());
         let collider_handle = self.collider_set.insert(collider);
         StaticHandle(collider_handle)
@@ -83,7 +83,7 @@ impl Physics {
         collider: MyColliderBuilder,
         position: Vec2,
     ) -> SensorHandle {
-        let mut collider = collider.0.sensor(true).user_data(idx.to_u128()).build();
+        let mut collider = collider.inner.sensor(true).user_data(idx.to_u128()).build();
         collider.set_translation(position.into());
         let collider_handle = self.collider_set.insert(collider);
         SensorHandle(collider_handle)
@@ -92,14 +92,17 @@ impl Physics {
     pub fn add_dynamic(
         &mut self,
         idx: GenerationalIndex,
-        collider: MyColliderBuilder,
+        my_collider: MyColliderBuilder,
         position: Vec2,
     ) -> DynamicHandle {
-        let collider = collider.0.user_data(idx.to_u128()).build();
-        let rigid_body = RigidBodyBuilder::new_dynamic()
+        let collider = my_collider.inner.user_data(idx.to_u128()).build();
+        let mut rigid_body = RigidBodyBuilder::new_dynamic()
             .translation(position.into())
-            .ccd_enabled(true)
-            .build();
+            .ccd_enabled(true);
+        if my_collider.lock_rotations {
+            rigid_body = rigid_body.lock_rotations();
+        }
+        let rigid_body = rigid_body.build();
 
         let rigid_body_handle = self.rigid_body_set.insert(rigid_body);
 
@@ -114,13 +117,16 @@ impl Physics {
     pub fn add_kinematic(
         &mut self,
         idx: GenerationalIndex,
-        collider: MyColliderBuilder,
+        my_collider: MyColliderBuilder,
         position: Vec2,
     ) -> KinematicHandle {
-        let collider = collider.0.user_data(idx.to_u128()).build();
-        let rigid_body = RigidBodyBuilder::new_kinematic_velocity_based()
-            .translation(position.into())
-            .build();
+        let collider = my_collider.inner.user_data(idx.to_u128()).build();
+        let mut rigid_body =
+            RigidBodyBuilder::new_kinematic_velocity_based().translation(position.into());
+        if my_collider.lock_rotations {
+            rigid_body = rigid_body.lock_rotations();
+        }
+        let rigid_body = rigid_body.build();
 
         let rigid_body_handle = self.rigid_body_set.insert(rigid_body);
 
@@ -291,37 +297,52 @@ impl<'a> EventHandler for RawEventCollector<'a> {
     }
 }
 
-pub struct MyColliderBuilder(ColliderBuilder);
+pub struct MyColliderBuilder {
+    lock_rotations: bool,
+    inner: ColliderBuilder,
+}
 
 impl MyColliderBuilder {
+    pub fn new(inner: ColliderBuilder) -> Self {
+        MyColliderBuilder {
+            lock_rotations: false,
+            inner,
+        }
+    }
+
     pub fn intersection_events(mut self) -> Self {
-        self.0.active_events |= ActiveEvents::INTERSECTION_EVENTS;
+        self.inner.active_events |= ActiveEvents::INTERSECTION_EVENTS;
         self
     }
 
     pub fn contact_events(mut self) -> Self {
-        self.0.active_events |= ActiveEvents::CONTACT_EVENTS;
+        self.inner.active_events |= ActiveEvents::CONTACT_EVENTS;
         self
     }
 
     pub fn mass(mut self, mass: f32) -> Self {
         // ensure the builder has a mass_properties
-        if self.0.mass_properties.is_none() {
-            self.0.mass_properties = Some(self.0.shape.mass_properties(1.));
+        if self.inner.mass_properties.is_none() {
+            self.inner.mass_properties = Some(self.inner.shape.mass_properties(1.));
         }
 
-        (*self.0.mass_properties.as_mut().unwrap()).set_mass(mass, true);
+        (*self.inner.mass_properties.as_mut().unwrap()).set_mass(mass, true);
 
+        self
+    }
+
+    pub fn lock_rotations(mut self) -> Self {
+        self.lock_rotations = true;
         self
     }
 }
 
 pub fn cuboid(size: Vec2) -> MyColliderBuilder {
-    MyColliderBuilder(ColliderBuilder::cuboid(size.x / 2., size.y / 2.))
+    MyColliderBuilder::new(ColliderBuilder::cuboid(size.x / 2., size.y / 2.))
 }
 
 pub fn ball(radius: f32) -> MyColliderBuilder {
-    MyColliderBuilder(ColliderBuilder::ball(radius))
+    MyColliderBuilder::new(ColliderBuilder::ball(radius))
 }
 
 #[derive(Clone, Copy, PartialEq)]

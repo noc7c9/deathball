@@ -98,7 +98,10 @@ impl Enemy {
         // add a dynamic body with very large mass so that we mimic a kinematic body that
         // can't be moved by collisions from animals
         // but will not intersect static bodies
-        let collider = physics::ball(16.).mass(1_000_000_000.).contact_events();
+        let collider = physics::ball(16.)
+            .mass(1_000_000_000.)
+            .lock_rotations()
+            .contact_events();
         let handle = res.physics.add_dynamic(idx, collider, position);
 
         let collider = physics::ball(variant.detection_range).intersection_events();
