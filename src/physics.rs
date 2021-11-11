@@ -175,9 +175,9 @@ impl Physics {
         body.rotation().to_polar().1
     }
 
-    // pub fn set_linear_velocity(&mut self, handle: impl Into<RigidBodyHandle>, linvel: Vec2) {
-    //     self.rigid_body_set[handle.into()].set_linvel(linvel.into(), true);
-    // }
+    pub fn set_linear_velocity(&mut self, handle: impl Into<RigidBodyHandle>, linvel: Vec2) {
+        self.rigid_body_set[handle.into()].set_linvel(linvel.into(), true);
+    }
 
     // pub fn set_angular_velocity(&mut self, handle: impl Into<RigidBodyHandle>, angvel: f32) {
     //     self.rigid_body_set[handle.into()].set_angvel(angvel, true);
@@ -324,19 +324,19 @@ pub fn ball(radius: f32) -> MyColliderBuilder {
     MyColliderBuilder(ColliderBuilder::ball(radius))
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct StaticHandle(ColliderHandle);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct SensorHandle(ColliderHandle);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct DynamicHandle(ColliderHandle, RigidBodyHandle);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct KinematicHandle(ColliderHandle, RigidBodyHandle);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Handle {
     Static(StaticHandle),
     Sensor(SensorHandle),

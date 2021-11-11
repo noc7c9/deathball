@@ -11,7 +11,7 @@ use assets::Assets;
 use camera::Camera;
 use entities::{Entities, GenerationalIndex};
 use input::Input;
-use physics::{Physics, PhysicsEvent};
+use physics::{Physics, PhysicsEvent, PhysicsEventKind};
 
 mod animals;
 mod buildings;
@@ -144,7 +144,16 @@ async fn main() {
             else if idx1.group() == Animal::GROUP && idx2.group() == Enemy::GROUP {
                 let animal = &mut animals[idx1];
                 let enemy = &mut enemies[idx2];
-                enemy.damage(animal.damage);
+
+                match event.kind {
+                    // will only happen for detection range sensor
+                    PhysicsEventKind::IntersectStart => enemy.add_nearby(event.collider1),
+                    PhysicsEventKind::IntersectEnd => enemy.remove_nearby(event.collider1),
+
+                    // will only happen for collision body
+                    PhysicsEventKind::ContactStart => enemy.damage(animal.damage),
+                    _ => {}
+                }
             }
         }
 
