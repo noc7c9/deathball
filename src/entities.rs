@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+const ONE_OFF_GROUP: u8 = 0;
+
 pub struct Entities<T, const GROUP: u8> {
     vec: Vec<Option<T>>,
     free: VecDeque<GenerationalIndex>,
@@ -7,30 +9,35 @@ pub struct Entities<T, const GROUP: u8> {
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct GenerationalIndex {
-    generation: u64,
+    group_generation: u64,
     index: u64,
 }
 
 impl GenerationalIndex {
     pub const fn single(index: usize) -> Self {
+        GenerationalIndex::new(ONE_OFF_GROUP, 0, index)
+    }
+
+    const fn new(group: u8, generation: u64, index: usize) -> Self {
+        let group_generation = ((group as u64) << (64 - 8)) | generation;
+        let index = index as u64;
         GenerationalIndex {
-            generation: 0,
-            index: index as u64,
+            group_generation,
+            index,
         }
     }
 
-    fn new(group: u8, generation: u64, index: usize) -> Self {
-        let generation = ((group as u64) << 56) | generation;
-        let index = index as u64;
-        GenerationalIndex { generation, index }
+    // takes an existing index and returns it with the given group
+    pub fn with_group(&self, new_group: u8) -> Self {
+        GenerationalIndex::new(new_group, self.generation(), self.index())
     }
 
     pub fn group(&self) -> u8 {
-        (self.generation >> 56) as u8
+        (self.group_generation >> (64 - 8)) as u8
     }
 
     fn generation(&self) -> u64 {
-        (self.generation << 8) >> 8
+        (self.group_generation << 8) >> 8
     }
 
     fn index(&self) -> usize {
@@ -38,13 +45,16 @@ impl GenerationalIndex {
     }
 
     pub fn to_u128(self) -> u128 {
-        (self.generation as u128) << 64 | (self.index as u128)
+        (self.group_generation as u128) << 64 | (self.index as u128)
     }
 
     pub fn from_u128(num: u128) -> Self {
-        let generation = (num >> 64) as u64;
+        let group_generation = (num >> 64) as u64;
         let index = ((num << 64) >> 64) as u64;
-        GenerationalIndex { generation, index }
+        GenerationalIndex {
+            group_generation,
+            index,
+        }
     }
 }
 
@@ -60,7 +70,7 @@ impl std::fmt::Debug for GenerationalIndex {
 
 impl<T, const GROUP: u8> Entities<T, GROUP> {
     pub fn new() -> Self {
-        debug_assert!(GROUP != 0, "entities's group cannot be 0");
+        debug_assert!(GROUP != ONE_OFF_GROUP, "entities's group cannot be 0");
         Entities {
             vec: Vec::new(),
             free: VecDeque::new(),
@@ -69,7 +79,7 @@ impl<T, const GROUP: u8> Entities<T, GROUP> {
 
     pub fn push(&mut self, new: impl FnOnce(GenerationalIndex) -> T) -> GenerationalIndex {
         if let Some(mut idx) = self.free.pop_front() {
-            idx.generation += 1;
+            idx.group_generation += 1;
             self.vec[idx.index()] = Some(new(idx));
             idx
         } else {
@@ -173,7 +183,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn should_not_a_group_of_zero_for_entities() {
+    fn should_not_allow_a_group_of_zero_for_entities() {
         Entities::<(), 0>::new();
     }
 
