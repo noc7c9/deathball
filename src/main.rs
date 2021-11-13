@@ -26,6 +26,16 @@ use enemies::Enemy;
 
 const DRAW_COLLIDERS: bool = false;
 
+pub mod groups {
+    pub const DEATH_BALL: super::GenerationalIndex = super::GenerationalIndex::single(0);
+
+    pub const ANIMAL: u8 = 1;
+
+    pub const BUILDING: u8 = 2;
+
+    pub const ENEMY: u8 = 3;
+}
+
 pub struct Resources {
     assets: Assets,
     input: Input,
@@ -54,9 +64,9 @@ async fn main() {
     };
     let mut physics_events: Vec<PhysicsEvent> = Vec::new();
     let mut death_ball = DeathBall::new(&mut res, Vec2::ZERO);
-    let mut animals: Entities<Animal, { Animal::GROUP }> = Entities::new();
-    let mut buildings: Entities<Building, { Building::GROUP }> = Entities::new();
-    let mut enemies: Entities<Enemy, { Enemy::GROUP }> = Entities::new();
+    let mut animals: Entities<Animal, { groups::ANIMAL }> = Entities::new();
+    let mut buildings: Entities<Building, { groups::BUILDING }> = Entities::new();
+    let mut enemies: Entities<Enemy, { groups::ENEMY }> = Entities::new();
 
     // Create the buildings
     for pos in [
@@ -111,9 +121,9 @@ async fn main() {
         // Clear deleted entities
         for idx in res.deleted.drain(..) {
             match idx.group() {
-                Animal::GROUP => animals.remove(idx),
-                Building::GROUP => buildings.remove(idx),
-                Enemy::GROUP => enemies.remove(idx),
+                groups::ANIMAL => animals.remove(idx),
+                groups::BUILDING => buildings.remove(idx),
+                groups::ENEMY => enemies.remove(idx),
                 _ => {}
             };
         }
@@ -130,18 +140,18 @@ async fn main() {
             let idx2 = res.physics.get_idx(event.collider2);
 
             // DeathBall with Animal
-            if idx1 == DeathBall::IDX && idx2.group() == Animal::GROUP {
+            if idx1 == groups::DEATH_BALL && idx2.group() == groups::ANIMAL {
                 let animal = &mut animals[idx2];
                 animal.is_affected_by_death_ball(true);
             }
             // Animal with Building
-            else if idx1.group() == Animal::GROUP && idx2.group() == Building::GROUP {
+            else if idx1.group() == groups::ANIMAL && idx2.group() == groups::BUILDING {
                 let animal = &mut animals[idx1];
                 let building = &mut buildings[idx2];
                 building.damage(animal.damage);
             }
             // Animal with Enemy
-            else if idx1.group() == Animal::GROUP && idx2.group() == Enemy::GROUP {
+            else if idx1.group() == groups::ANIMAL && idx2.group() == groups::ENEMY {
                 let animal = &mut animals[idx1];
                 let enemy = &mut enemies[idx2];
 

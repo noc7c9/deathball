@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{entities::GenerationalIndex, physics, spritesheet::Sprite, Resources};
+use crate::{groups, physics, spritesheet::Sprite, Resources};
 
 pub struct DeathBall {
     handle: physics::SensorHandle,
@@ -8,11 +8,11 @@ pub struct DeathBall {
 }
 
 impl DeathBall {
-    pub const IDX: GenerationalIndex = GenerationalIndex::single(0);
-
     pub fn new(res: &mut Resources, position: Vec2) -> Self {
         let collider = physics::ball(16.).mass(1.).intersection_events();
-        let handle = res.physics.add_sensor(DeathBall::IDX, collider, position);
+        let handle = res
+            .physics
+            .add_sensor(groups::DEATH_BALL, collider, position);
         DeathBall {
             handle,
             sprite: res.assets.animals.sprite(vec2(7., 5.)),

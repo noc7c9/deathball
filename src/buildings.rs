@@ -3,6 +3,7 @@ use macroquad::prelude::*;
 use crate::{
     animals::{Animal, Variant as AnimalVariant},
     entities::{Entities, GenerationalIndex},
+    groups,
     health_bar::HealthBar,
     physics,
     spritesheet::Sprite,
@@ -50,8 +51,6 @@ pub struct Variant {
 }
 
 impl Building {
-    pub const GROUP: u8 = 2;
-
     pub const VARIANTS: [Variant; 22] = [
         Variant {
             _name: "barn",
@@ -315,7 +314,7 @@ impl Building {
         &mut self,
         res: &mut Resources,
         delta: f32,
-        animals: &mut Entities<Animal, { Animal::GROUP }>,
+        animals: &mut Entities<Animal, { groups::ANIMAL }>,
     ) {
         match self.status {
             Status::Destructible {

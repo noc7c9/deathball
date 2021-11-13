@@ -40,8 +40,6 @@ pub struct Variant {
 }
 
 impl Enemy {
-    pub const GROUP: u8 = 3;
-
     pub const VARIANTS: [Variant; 6] = [
         Variant {
             _name: "demon",

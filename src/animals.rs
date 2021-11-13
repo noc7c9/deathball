@@ -93,8 +93,6 @@ impl Variant {
 }
 
 impl Animal {
-    pub const GROUP: u8 = 1;
-
     const VARIANTS: [Variant; 13] = [
         Variant::Cat,
         Variant::Dog,
