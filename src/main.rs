@@ -34,6 +34,7 @@ pub mod groups {
     pub const BUILDING: u8 = 2;
 
     pub const ENEMY: u8 = 3;
+    pub const ENEMY_ATTACK: u8 = 4;
 }
 
 pub struct Resources {
@@ -164,6 +165,21 @@ async fn main() {
                     PhysicsEventKind::ContactStart => enemy.damage(animal.damage),
                     _ => {}
                 }
+            }
+            // Animal with Enemy Attacks
+            else if idx1.group() == groups::ANIMAL && idx2.group() == groups::ENEMY_ATTACK {
+                let animal = &mut animals[idx1];
+                let animal_handle = event.collider1;
+                let enemy = &enemies[idx2.with_group(groups::ENEMY)];
+                let enemy_handle = event.collider2;
+
+                let animal_pos = res.physics.get_position(animal_handle);
+                let enemy_pos = res.physics.get_position(enemy_handle);
+                let direction = (animal_pos - enemy_pos).normalize_or_zero();
+
+                animal.is_affected_by_death_ball(false);
+                res.physics
+                    .apply_impulse(animal_handle, direction * enemy.attack_impulse);
             }
         }
 

@@ -1,20 +1,28 @@
 use macroquad::prelude::*;
 
 use crate::{
-    entities::GenerationalIndex, health_bar::HealthBar, physics, spritesheet::Sprite, Resources,
+    entities::GenerationalIndex, groups, health_bar::HealthBar, physics, spritesheet::Sprite,
+    Resources,
 };
 
 const FADE_TIME: f32 = 1.;
 
+const ATTACK_DURATION: f32 = 1.;
+const ATTACK_OFFSET_START: f32 = 6.;
+const ATTACK_OFFSET_END: f32 = 56.;
+
 const HEALTH_BAR_SIZE: (f32, f32) = (32., 14.);
 const HEALTH_BAR_OFFSET: (f32, f32) = (16., 36.);
 
-pub enum Status {
+enum Status {
     Alive {
         health_bar: HealthBar,
         health: u16,
         max_health: u16,
+
         speed: f32,
+
+        attack: Attack,
     },
     Dead {
         fade_timer: f32,
@@ -28,6 +36,7 @@ pub struct Enemy {
     nearby_animals: Vec<physics::Handle>,
     sprite: Sprite,
     status: Status,
+    pub attack_impulse: f32,
 }
 
 #[derive(Clone, Copy)]
@@ -37,6 +46,8 @@ pub struct Variant {
     health: u16,
     speed: f32,
     detection_range: f32,
+    attack_impulse: f32,
+    attack_cooldown: f32,
 }
 
 impl Enemy {
@@ -47,6 +58,8 @@ impl Enemy {
             health: 200,
             speed: 75.,
             detection_range: 600.,
+            attack_impulse: 500.,
+            attack_cooldown: 5.,
         },
         Variant {
             _name: "demon_boss",
@@ -54,6 +67,8 @@ impl Enemy {
             health: 400,
             speed: 50.,
             detection_range: 6000.,
+            attack_impulse: 1000.,
+            attack_cooldown: 5.,
         },
         Variant {
             _name: "farmer",
@@ -61,6 +76,8 @@ impl Enemy {
             health: 10,
             speed: 50.,
             detection_range: 300.,
+            attack_impulse: 500.,
+            attack_cooldown: 10.,
         },
         Variant {
             _name: "police",
@@ -68,6 +85,8 @@ impl Enemy {
             health: 20,
             speed: 50.,
             detection_range: 400.,
+            attack_impulse: 500.,
+            attack_cooldown: 10.,
         },
         Variant {
             _name: "snowman",
@@ -75,6 +94,8 @@ impl Enemy {
             health: 25,
             speed: 25.,
             detection_range: 600.,
+            attack_impulse: 500.,
+            attack_cooldown: 7.,
         },
         Variant {
             _name: "soldier",
@@ -82,6 +103,8 @@ impl Enemy {
             health: 50,
             speed: 60.,
             detection_range: 400.,
+            attack_impulse: 700.,
+            attack_cooldown: 9.,
         },
     ];
 
@@ -111,11 +134,15 @@ impl Enemy {
             handle,
             sensor_handle,
             nearby_animals: Vec::new(),
+            attack_impulse: variant.attack_impulse,
             status: Status::Alive {
                 health_bar: HealthBar::new(HEALTH_BAR_SIZE.into(), HEALTH_BAR_OFFSET.into()),
                 health: variant.health,
                 max_health: variant.health,
+
                 speed: variant.speed,
+
+                attack: Attack::new(idx, res, variant.attack_cooldown),
             },
         }
     }
@@ -150,11 +177,14 @@ impl Enemy {
             Status::Alive {
                 speed,
                 ref mut health_bar,
+                ref mut attack,
                 ..
             } => {
                 health_bar.update(delta);
 
                 let position = res.physics.get_position(self.handle);
+
+                attack.update(res, delta, position, self.nearby_animals.first());
 
                 // ensure sensor collider moves with the enemy
                 res.physics.set_position(self.sensor_handle, position);
@@ -187,10 +217,14 @@ impl Enemy {
                 health,
                 max_health,
                 ref health_bar,
+
+                ref attack,
                 ..
             } => {
                 self.sprite.draw(position, rotation);
                 health_bar.draw(position, health as f32 / max_health as f32);
+
+                attack.draw(res);
             }
             Status::Dead { fade_timer } => {
                 let alpha = fade_timer / FADE_TIME;
@@ -198,4 +232,109 @@ impl Enemy {
             }
         }
     }
+}
+
+struct Attack {
+    idx: GenerationalIndex,
+    sprite: Sprite,
+
+    cooldown: f32,
+
+    status: AttackStatus,
+}
+
+enum AttackStatus {
+    Charging {
+        timer: f32,
+    },
+    InProgress {
+        timer: f32,
+        direction: Vec2,
+        handle: physics::SensorHandle,
+    },
+}
+
+impl Attack {
+    fn new(enemy_idx: GenerationalIndex, res: &mut Resources, cooldown: f32) -> Self {
+        let idx = enemy_idx.with_group(groups::ENEMY_ATTACK);
+
+        let sprite = res.assets.enemies.sprite((7., 5.).into());
+
+        Attack {
+            idx,
+            sprite,
+            cooldown,
+            status: AttackStatus::Charging { timer: 0. },
+        }
+    }
+
+    fn update(
+        &mut self,
+        res: &mut Resources,
+        delta: f32,
+        enemy_position: Vec2,
+        target: Option<&physics::Handle>,
+    ) {
+        match self.status {
+            AttackStatus::Charging { ref mut timer } => {
+                // charge attack
+                *timer += delta;
+                if *timer < self.cooldown {
+                    return;
+                }
+
+                if let Some(&target) = target {
+                    let collider = physics::ball(16.).intersection_events();
+                    let handle = res.physics.add_sensor(self.idx, collider, enemy_position);
+
+                    let target_position = res.physics.get_position(target);
+                    let direction = (target_position - enemy_position).normalize_or_zero();
+
+                    self.status = AttackStatus::InProgress {
+                        timer: 0.,
+                        direction,
+                        handle,
+                    };
+                }
+            }
+            AttackStatus::InProgress {
+                ref mut timer,
+                ref mut direction,
+                handle,
+            } => {
+                *timer += delta;
+                if *timer > ATTACK_DURATION {
+                    res.physics.remove(handle);
+                    self.status = AttackStatus::Charging { timer: 0. };
+                    return;
+                }
+
+                // if we have (still) a target, aim for it's updated position
+                if let Some(&target) = target {
+                    let target_position = res.physics.get_position(target);
+                    *direction = (target_position - enemy_position).normalize_or_zero();
+                }
+
+                // move the sensor
+                let amount = *timer / ATTACK_DURATION;
+                let offset = lerp(ATTACK_OFFSET_START, ATTACK_OFFSET_END, amount) * *direction;
+                res.physics.set_position(handle, enemy_position + offset);
+
+                let angle = -direction.angle_between(Vec2::X);
+                res.physics.set_rotation(handle, angle);
+            }
+        }
+    }
+
+    fn draw(&self, res: &Resources) {
+        if let AttackStatus::InProgress { handle, .. } = self.status {
+            let position = res.physics.get_position(handle);
+            let rotation = res.physics.get_rotation(handle);
+            self.sprite.draw(position, rotation);
+        }
+    }
+}
+
+fn lerp(start: f32, end: f32, amount: f32) -> f32 {
+    start + (end - start) * amount
 }

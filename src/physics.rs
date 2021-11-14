@@ -175,6 +175,11 @@ impl Physics {
         (*body.translation()).into()
     }
 
+    pub fn set_rotation(&mut self, handle: impl Into<ColliderHandle>, angle: f32) {
+        let body = &mut self.collider_set[handle.into()];
+        body.set_rotation(angle);
+    }
+
     pub fn get_rotation(&self, handle: impl Into<ColliderHandle>) -> f32 {
         use nalgebra::ComplexField;
         let body = &self.collider_set[handle.into()];
@@ -396,6 +401,21 @@ impl From<Handle> for ColliderHandle {
         match handle {
             Handle::Static(handle) => handle.into(),
             Handle::Sensor(handle) => handle.into(),
+            Handle::Dynamic(handle) => handle.into(),
+            Handle::Kinematic(handle) => handle.into(),
+        }
+    }
+}
+
+impl From<Handle> for RigidBodyHandle {
+    fn from(handle: Handle) -> RigidBodyHandle {
+        match handle {
+            Handle::Static(_) => {
+                panic!("StaticHandle cannot be converted to a RigidBodyHandle")
+            }
+            Handle::Sensor(_) => {
+                panic!("SensorHandle cannot be converted to a RigidBodyHandle")
+            }
             Handle::Dynamic(handle) => handle.into(),
             Handle::Kinematic(handle) => handle.into(),
         }
