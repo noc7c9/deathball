@@ -7,6 +7,9 @@ use crate::{
 
 const FADE_TIME: f32 = 1.;
 
+const PRE_ATTACK_FLASH: f32 = 0.4;
+const PRE_ATTACK_DURATION: f32 = PRE_ATTACK_FLASH * 3.;
+
 const ATTACK_DURATION: f32 = 1.;
 const ATTACK_OFFSET_START: f32 = 6.;
 const ATTACK_OFFSET_END: f32 = 56.;
@@ -221,9 +224,9 @@ impl Enemy {
                 ref attack,
                 ..
             } => {
-                self.sprite.draw(position, rotation);
+                self.sprite
+                    .draw_tint(position, rotation, attack.enemy_tint());
                 health_bar.draw(position, health as f32 / max_health as f32);
-
                 attack.draw(res);
             }
             Status::Dead { fade_timer } => {
@@ -247,6 +250,11 @@ enum AttackStatus {
     Charging {
         timer: f32,
     },
+    PreAttack {
+        timer: f32,
+        direction: Vec2,
+        handle: physics::SensorHandle,
+    },
     InProgress {
         timer: f32,
         direction: Vec2,
@@ -268,6 +276,16 @@ impl Attack {
         }
     }
 
+    fn enemy_tint(&self) -> Color {
+        if let AttackStatus::PreAttack { timer, .. } = self.status {
+            // flash red repeatedly
+            let t = (timer % PRE_ATTACK_FLASH) * (1. / PRE_ATTACK_FLASH);
+            Color::new(1., t, t, 1.)
+        } else {
+            WHITE
+        }
+    }
+
     fn update(
         &mut self,
         res: &mut Resources,
@@ -275,6 +293,11 @@ impl Attack {
         enemy_position: Vec2,
         target: Option<&physics::Handle>,
     ) {
+        let get_direction_to = |target| {
+            let target_position = res.physics.get_position(target);
+            (target_position - enemy_position).normalize_or_zero()
+        };
+
         match self.status {
             AttackStatus::Charging { ref mut timer } => {
                 // charge attack
@@ -284,12 +307,27 @@ impl Attack {
                 }
 
                 if let Some(&target) = target {
+                    let direction = get_direction_to(target);
+
                     let collider = physics::ball(16.).intersection_events();
-                    let handle = res.physics.add_sensor(self.idx, collider, enemy_position);
+                    // spawn off screen so that it won't appear teleport on the first frame
+                    let position = Vec2::ONE * 99999999.;
+                    let handle = res.physics.add_sensor(self.idx, collider, position);
 
-                    let target_position = res.physics.get_position(target);
-                    let direction = (target_position - enemy_position).normalize_or_zero();
-
+                    self.status = AttackStatus::PreAttack {
+                        timer: 0.,
+                        direction,
+                        handle,
+                    };
+                }
+            }
+            AttackStatus::PreAttack {
+                ref mut timer,
+                direction,
+                handle,
+            } => {
+                *timer += delta;
+                if *timer > PRE_ATTACK_DURATION {
                     self.status = AttackStatus::InProgress {
                         timer: 0.,
                         direction,
@@ -311,8 +349,7 @@ impl Attack {
 
                 // if we have (still) a target, aim for it's updated position
                 if let Some(&target) = target {
-                    let target_position = res.physics.get_position(target);
-                    *direction = (target_position - enemy_position).normalize_or_zero();
+                    *direction = get_direction_to(target);
                 }
 
                 // move the sensor

@@ -47,6 +47,10 @@ impl Sprite {
     pub fn draw_alpha(&self, position: Vec2, rotation: f32, alpha: f32) {
         let mut color = WHITE;
         color.a = alpha;
+        self.draw_tint(position, rotation, color)
+    }
+
+    pub fn draw_tint(&self, position: Vec2, rotation: f32, color: Color) {
         draw_texture_ex(
             self.sheet.texture,
             // take the position to be the center so that it matches how rapier works
