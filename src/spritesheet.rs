@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 #[derive(Clone, Copy)]
 pub struct Spritesheet {
     texture: Texture2D,
-    cell_size: f32,
+    pub cell_size: f32,
 }
 
 impl Spritesheet {
@@ -60,6 +60,19 @@ impl Sprite {
             DrawTextureParams {
                 source: Some(self.source),
                 rotation,
+                ..Default::default()
+            },
+        )
+    }
+
+    pub fn draw_top_right(&self, position: Vec2) {
+        draw_texture_ex(
+            self.sheet.texture,
+            position.x,
+            position.y,
+            WHITE,
+            DrawTextureParams {
+                source: Some(self.source),
                 ..Default::default()
             },
         )

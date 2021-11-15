@@ -14,12 +14,14 @@ use input::Input;
 use physics::{Physics, PhysicsEvent, PhysicsEventKind};
 
 mod animals;
+mod background;
 mod buildings;
 mod death_ball;
 mod enemies;
 mod health_bar;
 
 use animals::Animal;
+use background::{Background, Prop};
 use buildings::Building;
 use death_ball::DeathBall;
 use enemies::Enemy;
@@ -64,6 +66,24 @@ async fn main() {
         deleted: Vec::new(),
     };
     let mut physics_events: Vec<PhysicsEvent> = Vec::new();
+
+    let background =
+        Background::builder(Color::new(59. / 255., 99. / 255., 38. / 255., 1.), (26, 20))
+            .set_prop((2, 2), Prop::Grass1)
+            .set_prop((3, 2), Prop::Grass2)
+            .set_prop((4, 2), Prop::Grass3)
+            .set_prop((2, 3), Prop::Gravel1)
+            .set_prop((3, 3), Prop::Gravel2)
+            .set_prop((4, 3), Prop::Gravel3)
+            .set_prop((2, 5), Prop::FlowerWhite)
+            .set_prop((3, 5), Prop::FlowerYellow)
+            .set_prop((4, 5), Prop::FlowerRed)
+            .set_prop((5, 5), Prop::FlowerBlack)
+            .set_prop((6, 5), Prop::Eggplant)
+            .set_prop((8, 2), Prop::Mud)
+            .set_prop((8, 3), Prop::Hay)
+            .build(&res);
+
     let mut death_ball = DeathBall::new(&mut res, Vec2::ZERO);
     let mut animals: Entities<Animal, { groups::ANIMAL }> = Entities::new();
     let mut buildings: Entities<Building, { groups::BUILDING }> = Entities::new();
@@ -184,7 +204,7 @@ async fn main() {
         }
 
         // Draw
-        clear_background(BLACK);
+        background.draw();
         death_ball.draw(&res);
         for animal in &animals {
             animal.draw(&res);
