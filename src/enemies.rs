@@ -43,8 +43,16 @@ pub struct Enemy {
 }
 
 #[derive(Clone, Copy)]
-pub struct Variant {
-    _name: &'static str,
+pub enum Variant {
+    Demon,
+    DemonBoss,
+    Farmer,
+    Police,
+    Snowman,
+    Soldier,
+}
+
+struct VariantData {
     sprite: (f32, f32),
     health: u16,
     speed: f32,
@@ -53,62 +61,69 @@ pub struct Variant {
     attack_cooldown: f32,
 }
 
+impl Variant {
+    fn to_data(self) -> VariantData {
+        match self {
+            Variant::Demon => VariantData {
+                sprite: (5., 0.),
+                health: 200,
+                speed: 75.,
+                detection_range: 600.,
+                attack_impulse: 500.,
+                attack_cooldown: 5.,
+            },
+            Variant::DemonBoss => VariantData {
+                sprite: (5., 0.),
+                health: 400,
+                speed: 50.,
+                detection_range: 6000.,
+                attack_impulse: 1000.,
+                attack_cooldown: 5.,
+            },
+            Variant::Farmer => VariantData {
+                sprite: (1., 0.),
+                health: 10,
+                speed: 50.,
+                detection_range: 300.,
+                attack_impulse: 500.,
+                attack_cooldown: 10.,
+            },
+            Variant::Police => VariantData {
+                sprite: (2., 0.),
+                health: 20,
+                speed: 50.,
+                detection_range: 400.,
+                attack_impulse: 500.,
+                attack_cooldown: 10.,
+            },
+            Variant::Snowman => VariantData {
+                sprite: (4., 0.),
+                health: 25,
+                speed: 25.,
+                detection_range: 600.,
+                attack_impulse: 500.,
+                attack_cooldown: 7.,
+            },
+            Variant::Soldier => VariantData {
+                sprite: (3., 0.),
+                health: 50,
+                speed: 60.,
+                detection_range: 400.,
+                attack_impulse: 700.,
+                attack_cooldown: 9.,
+            },
+        }
+    }
+}
+
 impl Enemy {
     pub const VARIANTS: [Variant; 6] = [
-        Variant {
-            _name: "demon",
-            sprite: (5., 0.),
-            health: 200,
-            speed: 75.,
-            detection_range: 600.,
-            attack_impulse: 500.,
-            attack_cooldown: 5.,
-        },
-        Variant {
-            _name: "demon_boss",
-            sprite: (5., 0.),
-            health: 400,
-            speed: 50.,
-            detection_range: 6000.,
-            attack_impulse: 1000.,
-            attack_cooldown: 5.,
-        },
-        Variant {
-            _name: "farmer",
-            sprite: (1., 0.),
-            health: 10,
-            speed: 50.,
-            detection_range: 300.,
-            attack_impulse: 500.,
-            attack_cooldown: 10.,
-        },
-        Variant {
-            _name: "police",
-            sprite: (2., 0.),
-            health: 20,
-            speed: 50.,
-            detection_range: 400.,
-            attack_impulse: 500.,
-            attack_cooldown: 10.,
-        },
-        Variant {
-            _name: "snowman",
-            sprite: (4., 0.),
-            health: 25,
-            speed: 25.,
-            detection_range: 600.,
-            attack_impulse: 500.,
-            attack_cooldown: 7.,
-        },
-        Variant {
-            _name: "soldier",
-            sprite: (3., 0.),
-            health: 50,
-            speed: 60.,
-            detection_range: 400.,
-            attack_impulse: 700.,
-            attack_cooldown: 9.,
-        },
+        Variant::Demon,
+        Variant::DemonBoss,
+        Variant::Farmer,
+        Variant::Police,
+        Variant::Snowman,
+        Variant::Soldier,
     ];
 
     pub fn new(
@@ -117,6 +132,7 @@ impl Enemy {
         res: &mut Resources,
         position: Vec2,
     ) -> Self {
+        let variant = variant.to_data();
         let sprite = res.assets.enemies.sprite(variant.sprite.into());
 
         // add a dynamic body with very large mass so that we mimic a kinematic body that
