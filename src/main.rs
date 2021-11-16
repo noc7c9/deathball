@@ -9,9 +9,13 @@ mod spritesheet;
 
 use assets::Assets;
 use camera::Camera;
-use entities::{Entities, GenerationalIndex};
+use entities::GenerationalIndex;
 use input::Input;
 use physics::{Physics, PhysicsEvent, PhysicsEventKind};
+
+mod levels;
+
+use levels::Level;
 
 mod animals;
 mod background;
@@ -20,11 +24,7 @@ mod death_ball;
 mod enemies;
 mod health_bar;
 
-use animals::Animal;
-use background::{Background, Prop};
-use buildings::Building;
 use death_ball::DeathBall;
-use enemies::Enemy;
 
 const DRAW_COLLIDERS: bool = false;
 
@@ -67,62 +67,13 @@ async fn main() {
     };
     let mut physics_events: Vec<PhysicsEvent> = Vec::new();
 
-    let background =
-        Background::builder(Color::new(59. / 255., 99. / 255., 38. / 255., 1.), (26, 20))
-            .set_prop((2, 2), Prop::Grass1)
-            .set_prop((3, 2), Prop::Grass2)
-            .set_prop((4, 2), Prop::Grass3)
-            .set_prop((2, 3), Prop::Gravel1)
-            .set_prop((3, 3), Prop::Gravel2)
-            .set_prop((4, 3), Prop::Gravel3)
-            .set_prop((2, 5), Prop::FlowerWhite)
-            .set_prop((3, 5), Prop::FlowerYellow)
-            .set_prop((4, 5), Prop::FlowerRed)
-            .set_prop((5, 5), Prop::FlowerBlack)
-            .set_prop((6, 5), Prop::Eggplant)
-            .set_prop((8, 2), Prop::Mud)
-            .set_prop((8, 3), Prop::Hay)
-            .build(&res);
-
+    let Level {
+        background,
+        mut animals,
+        mut buildings,
+        mut enemies,
+    } = levels::test::init(&mut res);
     let mut death_ball = DeathBall::new(&mut res, Vec2::ZERO);
-    let mut animals: Entities<Animal, { groups::ANIMAL }> = Entities::new();
-    let mut buildings: Entities<Building, { groups::BUILDING }> = Entities::new();
-    let mut enemies: Entities<Enemy, { groups::ENEMY }> = Entities::new();
-
-    // Create the buildings
-    for pos in [
-        vec2(0., -500.),
-        vec2(-344., -500.),
-        vec2(344., -500.),
-        vec2(0., 500.),
-        vec2(-344., 500.),
-        vec2(344., 500.),
-    ] {
-        buildings.push(|idx| Building::horizontal_fence(idx, &mut res, pos));
-    }
-
-    for pos in [
-        vec2(-530., -344.),
-        vec2(-530., 0.),
-        vec2(-530., 344.),
-        vec2(530., -344.),
-        vec2(530., 0.),
-        vec2(530., 344.),
-    ] {
-        buildings.push(|idx| Building::vertical_fence(idx, &mut res, pos));
-    }
-
-    buildings.push(|idx| Building::new(Building::VARIANTS[0], idx, &mut res, vec2(0., 0.)));
-
-    enemies.push(|idx| Enemy::new(Enemy::VARIANTS[0], idx, &mut res, vec2(0., 100.)));
-
-    // Create ball
-    for _ in 0..10 {
-        let x = rand::gen_range(-450., 450.);
-        let y = rand::gen_range(-450., 450.);
-
-        animals.push(|idx| Animal::random(idx, &mut res, vec2(x, y)));
-    }
 
     loop {
         let delta = get_frame_time();
