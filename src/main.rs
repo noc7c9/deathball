@@ -160,11 +160,11 @@ async fn main() {
         for animal in &animals {
             animal.draw(&res);
         }
-        for building in &buildings {
-            building.draw(&res);
-        }
         for enemy in &enemies {
             enemy.draw(&res);
+        }
+        for building in &buildings {
+            building.draw(&res);
         }
 
         if DRAW_COLLIDERS {
