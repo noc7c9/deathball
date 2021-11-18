@@ -7,7 +7,7 @@ const CAMERA_ZOOM_FACTOR: f32 = 2.048;
 
 pub struct Background {
     clear_color: Color,
-    offset: (f32, f32),
+    offset: Vec2,
     texture: Texture2D,
 }
 
@@ -18,13 +18,14 @@ impl Background {
 
     pub fn draw(&self) {
         clear_background(self.clear_color);
-        draw_texture(self.texture, self.offset.0, self.offset.1, WHITE);
+        draw_texture(self.texture, self.offset.x, self.offset.y, WHITE);
     }
 }
 
 pub struct BackgroundBuilder {
     clear_color: Color,
     props: Vec<Option<Prop>>,
+    offset: Option<Vec2>,
     size: (u32, u32),
 }
 
@@ -33,13 +34,26 @@ impl BackgroundBuilder {
         BackgroundBuilder {
             clear_color,
             props: vec![None; (size.0 * size.1) as usize],
+            offset: None,
             size,
         }
+    }
+
+    pub fn set_props(mut self, props: &[((u32, u32), Prop)]) -> Self {
+        for &(xy, prop) in props {
+            self = self.set_prop(xy, prop);
+        }
+        self
     }
 
     pub fn set_prop(mut self, (x, y): (u32, u32), prop: Prop) -> Self {
         let idx = y * self.size.0 + x;
         self.props[idx as usize] = Some(prop);
+        self
+    }
+
+    pub fn offset(mut self, offset: Vec2) -> Self {
+        self.offset = Some(offset);
         self
     }
 
@@ -81,7 +95,7 @@ impl BackgroundBuilder {
 
         Background {
             clear_color: self.clear_color,
-            offset: (w / -2., h / -2.),
+            offset: self.offset.unwrap_or_else(|| vec2(w / -2., h / -2.)),
             texture: render_target.texture,
         }
     }

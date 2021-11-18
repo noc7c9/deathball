@@ -12,3 +12,11 @@ pub struct Level {
 
 // individual levels
 pub mod test;
+
+pub mod tutorial_scenario;
+
+pub mod scenario_1;
+
+pub mod scenario_2;
+
+pub mod final_scenario;
