@@ -22,6 +22,7 @@ impl Spritesheet {
         Sprite {
             sheet: *self,
             size,
+            scale: 1.,
             source: Rect::new(
                 self.cell_size * position.x,
                 self.cell_size * position.y,
@@ -37,9 +38,15 @@ pub struct Sprite {
     sheet: Spritesheet,
     size: Vec2,
     source: Rect,
+    scale: f32,
 }
 
 impl Sprite {
+    pub fn scale(mut self, scale: f32) -> Self {
+        self.scale = scale;
+        self
+    }
+
     pub fn draw(&self, position: Vec2, rotation: f32) {
         self.draw_alpha(position, rotation, 1.)
     }
@@ -51,13 +58,15 @@ impl Sprite {
     }
 
     pub fn draw_tint(&self, position: Vec2, rotation: f32, color: Color) {
+        let size = self.size * self.scale;
         draw_texture_ex(
             self.sheet.texture,
             // take the position to be the center so that it matches how rapier works
-            position.x - self.size.x / 2.,
-            position.y - self.size.y / 2.,
+            position.x - size.x / 2.,
+            position.y - size.y / 2.,
             color,
             DrawTextureParams {
+                dest_size: Some(size),
                 source: Some(self.source),
                 rotation,
                 ..Default::default()

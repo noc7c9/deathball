@@ -53,6 +53,7 @@ pub enum Variant {
 }
 
 struct VariantData {
+    scale: f32,
     sprite: (f32, f32),
     health: u16,
     speed: f32,
@@ -65,6 +66,7 @@ impl Variant {
     fn to_data(self) -> VariantData {
         match self {
             Variant::Demon => VariantData {
+                scale: 1.,
                 sprite: (5., 0.),
                 health: 200,
                 speed: 75.,
@@ -73,6 +75,7 @@ impl Variant {
                 attack_cooldown: 5.,
             },
             Variant::DemonBoss => VariantData {
+                scale: 10.,
                 sprite: (5., 0.),
                 health: 400,
                 speed: 50.,
@@ -81,6 +84,7 @@ impl Variant {
                 attack_cooldown: 5.,
             },
             Variant::Farmer => VariantData {
+                scale: 1.,
                 sprite: (1., 0.),
                 health: 10,
                 speed: 50.,
@@ -89,6 +93,7 @@ impl Variant {
                 attack_cooldown: 10.,
             },
             Variant::Police => VariantData {
+                scale: 1.,
                 sprite: (2., 0.),
                 health: 20,
                 speed: 50.,
@@ -97,6 +102,7 @@ impl Variant {
                 attack_cooldown: 10.,
             },
             Variant::Snowman => VariantData {
+                scale: 1.,
                 sprite: (4., 0.),
                 health: 25,
                 speed: 25.,
@@ -105,6 +111,7 @@ impl Variant {
                 attack_cooldown: 7.,
             },
             Variant::Soldier => VariantData {
+                scale: 1.,
                 sprite: (3., 0.),
                 health: 50,
                 speed: 60.,
@@ -133,19 +140,29 @@ impl Enemy {
         position: Vec2,
     ) -> Self {
         let variant = variant.to_data();
-        let sprite = res.assets.enemies.sprite(variant.sprite.into());
+        let scale = variant.scale;
+        let sprite = res
+            .assets
+            .enemies
+            .sprite(variant.sprite.into())
+            .scale(scale);
 
         // add a dynamic body with very large mass so that we mimic a kinematic body that
         // can't be moved by collisions from animals
         // but will not intersect static bodies
-        let collider = physics::ball(16.)
+        let collider = physics::ball(16. * scale)
             .mass(1_000_000_000.)
             .lock_rotations()
             .contact_events();
         let handle = res.physics.add_dynamic(idx, collider, position);
 
-        let collider = physics::ball(variant.detection_range).intersection_events();
+        let collider = physics::ball(variant.detection_range * scale).intersection_events();
         let sensor_handle = res.physics.add_sensor(idx, collider, position);
+
+        let mut health_bar_size = Vec2::from(HEALTH_BAR_SIZE);
+        health_bar_size.x *= scale;
+        let mut health_bar_offset = Vec2::from(HEALTH_BAR_OFFSET) * scale;
+        health_bar_offset.y /= 2.;
 
         Enemy {
             idx,
@@ -155,13 +172,13 @@ impl Enemy {
             nearby_animals: Vec::new(),
             attack_impulse: variant.attack_impulse,
             status: Status::Alive {
-                health_bar: HealthBar::new(HEALTH_BAR_SIZE.into(), HEALTH_BAR_OFFSET.into()),
+                health_bar: HealthBar::new(health_bar_size, health_bar_offset),
                 health: variant.health,
                 max_health: variant.health,
 
                 speed: variant.speed,
 
-                attack: Attack::new(idx, res, variant.attack_cooldown),
+                attack: Attack::new(idx, res, scale, variant.attack_cooldown),
             },
         }
     }
@@ -256,6 +273,7 @@ impl Enemy {
 struct Attack {
     idx: GenerationalIndex,
     sprite: Sprite,
+    scale: f32,
 
     cooldown: f32,
 
@@ -279,14 +297,15 @@ enum AttackStatus {
 }
 
 impl Attack {
-    fn new(enemy_idx: GenerationalIndex, res: &mut Resources, cooldown: f32) -> Self {
+    fn new(enemy_idx: GenerationalIndex, res: &mut Resources, scale: f32, cooldown: f32) -> Self {
         let idx = enemy_idx.with_group(groups::ENEMY_ATTACK);
 
-        let sprite = res.assets.enemies.sprite((7., 5.).into());
+        let sprite = res.assets.enemies.sprite((7., 5.).into()).scale(scale);
 
         Attack {
             idx,
             sprite,
+            scale,
             cooldown,
             status: AttackStatus::Charging { timer: 0. },
         }
@@ -325,7 +344,7 @@ impl Attack {
                 if let Some(&target) = target {
                     let direction = get_direction_to(target);
 
-                    let collider = physics::ball(16.).intersection_events();
+                    let collider = physics::ball(16. * self.scale).intersection_events();
                     // spawn off screen so that it won't appear teleport on the first frame
                     let position = Vec2::ONE * 99999999.;
                     let handle = res.physics.add_sensor(self.idx, collider, position);
@@ -371,7 +390,8 @@ impl Attack {
                 // move the sensor
                 let amount = *timer / ATTACK_DURATION;
                 let offset = lerp(ATTACK_OFFSET_START, ATTACK_OFFSET_END, amount) * *direction;
-                res.physics.set_position(handle, enemy_position + offset);
+                res.physics
+                    .set_position(handle, enemy_position + offset * self.scale);
 
                 let angle = -direction.angle_between(Vec2::X);
                 res.physics.set_rotation(handle, angle);
