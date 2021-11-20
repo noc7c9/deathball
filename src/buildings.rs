@@ -4,7 +4,7 @@ use crate::{
     animals::{Animal, Variant as AnimalVariant},
     entities::{Entities, GenerationalIndex},
     groups,
-    health_bar::HealthBar,
+    health::Health,
     physics,
     spritesheet::Sprite,
     Resources,
@@ -19,14 +19,8 @@ const HEALTH_BAR_OFFSET: (f32, f32) = (64., 92.);
 
 pub enum Status {
     Indestructible,
-    Destructible {
-        health_bar: HealthBar,
-        health: u8,
-        max_health: u8,
-    },
-    Destroyed {
-        fade_timer: f32,
-    },
+    Destructible { health: Health },
+    Destroyed { fade_timer: f32 },
 }
 
 pub struct Building {
@@ -306,9 +300,11 @@ impl Building {
                 Status::Indestructible
             } else {
                 Status::Destructible {
-                    health_bar: HealthBar::new(HEALTH_BAR_SIZE.into(), HEALTH_BAR_OFFSET.into()),
-                    health: variant.health,
-                    max_health: variant.health,
+                    health: Health::new(
+                        variant.health.into(),
+                        HEALTH_BAR_SIZE.into(),
+                        HEALTH_BAR_OFFSET.into(),
+                    ),
                 }
             },
             spawn_count: variant.spawn_count,
@@ -325,16 +321,9 @@ impl Building {
     }
 
     pub fn damage(&mut self, damage: u8) {
-        if let Status::Destructible {
-            ref mut health_bar,
-            health,
-            ..
-        } = &mut self.status
-        {
-            health_bar.reset_fade();
-
-            *health = health.saturating_sub(damage);
-            if *health == 0 {
+        if let Status::Destructible { ref mut health, .. } = &mut self.status {
+            health.damage(damage.into());
+            if health.is_empty() {
                 self.status = Status::Destroyed {
                     fade_timer: FADE_TIME,
                 };
@@ -349,9 +338,7 @@ impl Building {
         animals: &mut Entities<Animal, { groups::ANIMAL }>,
     ) {
         match self.status {
-            Status::Destructible {
-                ref mut health_bar, ..
-            } => health_bar.update(delta),
+            Status::Destructible { ref mut health, .. } => health.update(delta),
             Status::Destroyed { ref mut fade_timer } => {
                 *fade_timer -= delta;
                 if *fade_timer < 0. {
@@ -387,13 +374,9 @@ impl Building {
         let rotation = res.physics.get_rotation(self.handle);
         match self.status {
             Status::Indestructible => self.sprite.draw(position + self.offset, rotation),
-            Status::Destructible {
-                health,
-                max_health,
-                ref health_bar,
-            } => {
+            Status::Destructible { ref health } => {
                 self.sprite.draw(position + self.offset, rotation);
-                health_bar.draw(position, health as f32 / max_health as f32);
+                health.draw(position);
             }
             Status::Destroyed { fade_timer } => {
                 let alpha = fade_timer / FADE_TIME;

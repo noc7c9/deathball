@@ -22,7 +22,7 @@ mod background;
 mod buildings;
 mod death_ball;
 mod enemies;
-mod health_bar;
+mod health;
 
 use death_ball::DeathBall;
 

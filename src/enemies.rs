@@ -1,8 +1,7 @@
 use macroquad::prelude::*;
 
 use crate::{
-    entities::GenerationalIndex, groups, health_bar::HealthBar, physics, spritesheet::Sprite,
-    Resources,
+    entities::GenerationalIndex, groups, health::Health, physics, spritesheet::Sprite, Resources,
 };
 
 const FADE_TIME: f32 = 1.;
@@ -19,12 +18,8 @@ const HEALTH_BAR_OFFSET: (f32, f32) = (16., 36.);
 
 enum Status {
     Alive {
-        health_bar: HealthBar,
-        health: u16,
-        max_health: u16,
-
+        health: Health,
         speed: f32,
-
         attack: Attack,
     },
     Dead {
@@ -172,9 +167,7 @@ impl Enemy {
             nearby_animals: Vec::new(),
             attack_impulse: variant.attack_impulse,
             status: Status::Alive {
-                health_bar: HealthBar::new(health_bar_size, health_bar_offset),
-                health: variant.health,
-                max_health: variant.health,
+                health: Health::new(variant.health, health_bar_size, health_bar_offset),
 
                 speed: variant.speed,
 
@@ -191,16 +184,9 @@ impl Enemy {
     }
 
     pub fn damage(&mut self, damage: u8) {
-        if let Status::Alive {
-            ref mut health_bar,
-            health,
-            ..
-        } = &mut self.status
-        {
-            health_bar.reset_fade();
-
-            *health = health.saturating_sub(damage as u16);
-            if *health == 0 {
+        if let Status::Alive { ref mut health, .. } = &mut self.status {
+            health.damage(damage.into());
+            if health.is_empty() {
                 self.status = Status::Dead {
                     fade_timer: FADE_TIME,
                 };
@@ -212,11 +198,11 @@ impl Enemy {
         match self.status {
             Status::Alive {
                 speed,
-                ref mut health_bar,
+                ref mut health,
                 ref mut attack,
                 ..
             } => {
-                health_bar.update(delta);
+                health.update(delta);
 
                 let position = res.physics.get_position(self.handle);
 
@@ -250,16 +236,13 @@ impl Enemy {
         let rotation = res.physics.get_rotation(self.handle);
         match self.status {
             Status::Alive {
-                health,
-                max_health,
-                ref health_bar,
-
+                ref health,
                 ref attack,
                 ..
             } => {
                 self.sprite
                     .draw_tint(position, rotation, attack.enemy_tint());
-                health_bar.draw(position, health as f32 / max_health as f32);
+                health.draw(position);
                 attack.draw(res);
             }
             Status::Dead { fade_timer } => {
