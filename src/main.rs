@@ -45,6 +45,7 @@ pub struct Resources {
     camera: Camera,
     physics: Physics,
     deleted: Vec<GenerationalIndex>,
+    delta: f32,
 }
 
 pub fn window_config() -> Conf {
@@ -64,6 +65,7 @@ async fn main() {
         camera: Camera::new(),
         physics: Physics::new(),
         deleted: Vec::new(),
+        delta: 0.,
     };
     let mut physics_events: Vec<PhysicsEvent> = Vec::new();
 
@@ -76,7 +78,7 @@ async fn main() {
     let mut death_ball = DeathBall::new(&mut res, Vec2::ZERO);
 
     loop {
-        let delta = get_frame_time();
+        res.delta = get_frame_time();
 
         // Update entities
         death_ball.update(&mut res);
@@ -84,10 +86,10 @@ async fn main() {
             animal.update(&mut res, &death_ball);
         }
         for building in &mut buildings {
-            building.update(&mut res, delta, &mut animals);
+            building.update(&mut res, &mut animals);
         }
         for enemy in &mut enemies {
-            enemy.update(&mut res, delta);
+            enemy.update(&mut res);
         }
 
         // Clear deleted entities

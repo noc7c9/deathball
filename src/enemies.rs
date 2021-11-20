@@ -194,7 +194,7 @@ impl Enemy {
         }
     }
 
-    pub fn update(&mut self, res: &mut Resources, delta: f32) {
+    pub fn update(&mut self, res: &mut Resources) {
         match self.status {
             Status::Alive {
                 speed,
@@ -202,11 +202,11 @@ impl Enemy {
                 ref mut attack,
                 ..
             } => {
-                health.update(delta);
+                health.update(res.delta);
 
                 let position = res.physics.get_position(self.handle);
 
-                attack.update(res, delta, position, self.nearby_animals.first());
+                attack.update(res, position, self.nearby_animals.first());
 
                 // ensure sensor collider moves with the enemy
                 res.physics.set_position(self.sensor_handle, position);
@@ -221,7 +221,7 @@ impl Enemy {
                 res.physics.set_linear_velocity(self.handle, velocity);
             }
             Status::Dead { ref mut fade_timer } => {
-                *fade_timer -= delta;
+                *fade_timer -= res.delta;
                 if *fade_timer < 0. {
                     res.physics.remove(self.handle);
                     res.physics.remove(self.sensor_handle);
@@ -307,7 +307,6 @@ impl Attack {
     fn update(
         &mut self,
         res: &mut Resources,
-        delta: f32,
         enemy_position: Vec2,
         target: Option<&physics::Handle>,
     ) {
@@ -319,7 +318,7 @@ impl Attack {
         match self.status {
             AttackStatus::Charging { ref mut timer } => {
                 // charge attack
-                *timer += delta;
+                *timer += res.delta;
                 if *timer < self.cooldown {
                     return;
                 }
@@ -344,7 +343,7 @@ impl Attack {
                 direction,
                 handle,
             } => {
-                *timer += delta;
+                *timer += res.delta;
                 if *timer > PRE_ATTACK_DURATION {
                     self.status = AttackStatus::InProgress {
                         timer: 0.,
@@ -358,7 +357,7 @@ impl Attack {
                 ref mut direction,
                 handle,
             } => {
-                *timer += delta;
+                *timer += res.delta;
                 if *timer > ATTACK_DURATION {
                     res.physics.remove(handle);
                     self.status = AttackStatus::Charging { timer: 0. };

@@ -334,13 +334,12 @@ impl Building {
     pub fn update(
         &mut self,
         res: &mut Resources,
-        delta: f32,
         animals: &mut Entities<Animal, { groups::ANIMAL }>,
     ) {
         match self.status {
-            Status::Destructible { ref mut health, .. } => health.update(delta),
+            Status::Destructible { ref mut health, .. } => health.update(res.delta),
             Status::Destroyed { ref mut fade_timer } => {
-                *fade_timer -= delta;
+                *fade_timer -= res.delta;
                 if *fade_timer < 0. {
                     let origin = res.physics.get_position(self.handle);
 
