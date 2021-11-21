@@ -241,7 +241,7 @@ impl Physics {
 pub enum PhysicsEventKind {
     IntersectStart,
     IntersectEnd,
-    ContactStart,
+    ContactStart { point: Vec2 },
     ContactEnd,
 }
 
@@ -293,10 +293,16 @@ impl<'a> EventHandler for RawEventCollector<'a> {
         self.0.lock().unwrap().push((kind, a, b));
     }
 
-    fn handle_contact_event(&self, event: ContactEvent, _pair: &ContactPair) {
+    fn handle_contact_event(&self, event: ContactEvent, pair: &ContactPair) {
         let mut events = self.0.lock().unwrap();
         match event {
-            ContactEvent::Started(a, b) => events.push((PhysicsEventKind::ContactStart, a, b)),
+            ContactEvent::Started(a, b) => {
+                let contact = pair
+                    .find_deepest_contact()
+                    .expect("ContactEvent::Started must have a contact");
+                let point = contact.0.data.solver_contacts[0].point.into();
+                events.push((PhysicsEventKind::ContactStart { point }, a, b));
+            }
             ContactEvent::Stopped(a, b) => events.push((PhysicsEventKind::ContactEnd, a, b)),
         }
     }

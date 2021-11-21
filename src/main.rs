@@ -131,6 +131,11 @@ async fn main() {
                 let animal = &mut animals[idx1];
                 let building = &mut buildings[idx2];
                 building.damage(animal.damage);
+
+                // spawn hit effects on contact
+                if let PhysicsEventKind::ContactStart { point } = event.kind {
+                    hit_effects.push(|idx| hit_effect::HitEffect::new(idx, point));
+                }
             }
             // Animal with Enemy
             else if idx1.group() == groups::ANIMAL && idx2.group() == groups::ENEMY {
@@ -143,7 +148,12 @@ async fn main() {
                     PhysicsEventKind::IntersectEnd => enemy.remove_nearby(event.collider1),
 
                     // will only happen for collision body
-                    PhysicsEventKind::ContactStart => enemy.damage(animal.damage),
+                    PhysicsEventKind::ContactStart { point } => {
+                        enemy.damage(animal.damage);
+
+                        // spawn hit effects on contact
+                        hit_effects.push(|idx| hit_effect::HitEffect::new(idx, point));
+                    }
                     _ => {}
                 }
             }
