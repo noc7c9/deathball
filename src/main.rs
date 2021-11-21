@@ -177,6 +177,9 @@ async fn main() {
         // Draw
         background.draw();
         death_ball.draw(&res);
+        for hit_effect in &hit_effects {
+            hit_effect.draw();
+        }
         for animal in &animals {
             animal.draw(&res);
         }
@@ -185,9 +188,6 @@ async fn main() {
         }
         for building in &buildings {
             building.draw(&res);
-        }
-        for hit_effect in &hit_effects {
-            hit_effect.draw();
         }
 
         if DRAW_COLLIDERS {
