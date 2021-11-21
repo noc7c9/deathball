@@ -9,7 +9,7 @@ mod spritesheet;
 
 use assets::Assets;
 use camera::Camera;
-use entities::GenerationalIndex;
+use entities::{Entities, GenerationalIndex};
 use input::Input;
 use physics::{Physics, PhysicsEvent, PhysicsEventKind};
 
@@ -23,6 +23,7 @@ mod buildings;
 mod death_ball;
 mod enemies;
 mod health;
+mod hit_effect;
 
 use death_ball::DeathBall;
 
@@ -37,6 +38,8 @@ pub mod groups {
 
     pub const ENEMY: u8 = 3;
     pub const ENEMY_ATTACK: u8 = 4;
+
+    pub const HIT_EFFECT: u8 = 5;
 }
 
 pub struct Resources {
@@ -76,6 +79,7 @@ async fn main() {
         mut enemies,
     } = levels::test::init(&mut res);
     let mut death_ball = DeathBall::new(&mut res, Vec2::ZERO);
+    let mut hit_effects = Entities::<hit_effect::HitEffect, { groups::HIT_EFFECT }>::new();
 
     loop {
         res.delta = get_frame_time();
@@ -91,6 +95,9 @@ async fn main() {
         for enemy in &mut enemies {
             enemy.update(&mut res);
         }
+        for hit_effect in &mut hit_effects {
+            hit_effect.update(&mut res);
+        }
 
         // Clear deleted entities
         for idx in res.deleted.drain(..) {
@@ -98,6 +105,7 @@ async fn main() {
                 groups::ANIMAL => animals.remove(idx),
                 groups::BUILDING => buildings.remove(idx),
                 groups::ENEMY => enemies.remove(idx),
+                groups::HIT_EFFECT => hit_effects.remove(idx),
                 _ => {}
             };
         }
@@ -167,6 +175,9 @@ async fn main() {
         }
         for building in &buildings {
             building.draw(&res);
+        }
+        for hit_effect in &hit_effects {
+            hit_effect.draw();
         }
 
         if DRAW_COLLIDERS {
