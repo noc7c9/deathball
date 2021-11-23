@@ -56,6 +56,7 @@ pub fn window_config() -> Conf {
         window_title: "Giant Horse Deathball".to_owned(),
         window_width: 1200,
         window_height: 1200,
+        high_dpi: true,
         ..Default::default()
     }
 }
@@ -80,6 +81,24 @@ async fn main() {
     } = levels::test::init(&mut res);
     let mut death_ball = DeathBall::new(&mut res, Vec2::ZERO);
     let mut hit_effects = Entities::<hit_effect::HitEffect, { groups::HIT_EFFECT }>::new();
+
+    egui_macroquad::cfg(|ctx| {
+        ctx.set_fonts({
+            let mut fonts = egui::FontDefinitions::default();
+
+            fonts
+                .font_data
+                .insert("font".to_owned(), res.assets.font.take().unwrap().into());
+
+            fonts
+                .fonts_for_family
+                .get_mut(&egui::FontFamily::Proportional)
+                .unwrap()
+                .insert(0, "font".to_owned());
+
+            fonts
+        });
+    });
 
     loop {
         res.delta = get_frame_time();
@@ -174,6 +193,12 @@ async fn main() {
             }
         }
 
+        egui_macroquad::ui(|egui_ctx| {
+            egui::Window::new("egui ❤ macroquad").show(egui_ctx, |ui| {
+                ui.label("Test");
+            });
+        });
+
         // Draw
         background.draw();
         death_ball.draw(&res);
@@ -193,6 +218,8 @@ async fn main() {
         if DRAW_COLLIDERS {
             res.physics.draw_colliders();
         }
+
+        egui_macroquad::draw();
 
         res.camera.disable();
 
