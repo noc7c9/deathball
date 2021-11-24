@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 egui = "0.15.0"
 egui-macroquad = "0.7.0"
+futures = "0.3.18"
 macroquad = "0.3.10"
 nalgebra = { version = "0.29.0", features = ["convert-glam014"] }
 rapier2d = "0.11.1"
@@ -17,3 +18,4 @@ opt-level = 3
 
 [profile.release]
 codegen-units = 1
+lto = true

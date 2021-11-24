@@ -14,17 +14,20 @@ pub struct Assets {
 
 impl Assets {
     pub async fn load() -> Self {
-        let animals = load_texture("./assets/animals.png").await.unwrap();
-        let buildings = load_texture("./assets/buildings.png").await.unwrap();
-        let enemies = load_texture("./assets/enemies.png").await.unwrap();
-        let props = load_texture("./assets/props.png").await.unwrap();
-        let font = load_file("./assets/kenney-future.ttf").await.unwrap();
+        let (animals, buildings, enemies, props, font) = futures::future::join5(
+            load_texture("./assets/animals.png"),
+            load_texture("./assets/buildings.png"),
+            load_texture("./assets/enemies.png"),
+            load_texture("./assets/props.png"),
+            load_file("./assets/kenney-future.ttf"),
+        )
+        .await;
         Assets {
-            animals: Spritesheet::new(animals, SPRITE_SIZE),
-            buildings: Spritesheet::new(buildings, SPRITE_SIZE * 4.),
-            enemies: Spritesheet::new(enemies, SPRITE_SIZE),
-            props: Spritesheet::new(props, SPRITE_SIZE),
-            font: Some(font),
+            animals: Spritesheet::new(animals.unwrap(), SPRITE_SIZE),
+            buildings: Spritesheet::new(buildings.unwrap(), SPRITE_SIZE * 4.),
+            enemies: Spritesheet::new(enemies.unwrap(), SPRITE_SIZE),
+            props: Spritesheet::new(props.unwrap(), SPRITE_SIZE),
+            font: Some(font.unwrap()),
         }
     }
 }
