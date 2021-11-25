@@ -1,9 +1,10 @@
 use crate::{
     animals::Animal, background::Background, buildings::Building, enemies::Enemy,
-    entities::Entities, groups,
+    entities::Entities, groups, objectives::Objective,
 };
 
 pub struct Level {
+    pub objective: Objective,
     pub background: Background,
     pub animals: Entities<Animal, { groups::ANIMAL }>,
     pub buildings: Entities<Building, { groups::BUILDING }>,

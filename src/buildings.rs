@@ -331,6 +331,14 @@ impl Building {
         }
     }
 
+    pub fn is_destroyed(&self) -> bool {
+        if let Status::Destructible { health, .. } = &self.status {
+            health.is_empty()
+        } else {
+            false
+        }
+    }
+
     pub fn update(
         &mut self,
         res: &mut Resources,

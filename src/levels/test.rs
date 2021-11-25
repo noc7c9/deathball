@@ -7,10 +7,13 @@ use crate::{
     enemies::Enemy,
     entities::Entities,
     levels::Level,
+    objectives::Objective,
     Resources,
 };
 
 pub fn init(res: &mut Resources) -> Level {
+    let objective = Objective::none();
+
     let background =
         Background::builder(Color::new(59. / 255., 99. / 255., 38. / 255., 1.), (26, 20))
             .set_prop((2, 2), Prop::Grass1)
@@ -66,6 +69,7 @@ pub fn init(res: &mut Resources) -> Level {
     }
 
     Level {
+        objective,
         background,
         animals,
         buildings,

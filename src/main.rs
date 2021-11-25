@@ -23,6 +23,7 @@ mod death_ball;
 mod enemies;
 mod health;
 mod hit_effect;
+mod objectives;
 
 const DRAW_COLLIDERS: bool = false;
 

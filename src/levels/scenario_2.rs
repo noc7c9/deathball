@@ -7,10 +7,13 @@ use crate::{
     enemies::{Enemy, Variant::*},
     entities::Entities,
     levels::Level,
+    objectives::Objective,
     Resources,
 };
 
 pub fn init(res: &mut Resources) -> Level {
+    let objective = Objective::destroy_buildings(80);
+
     let background = Background::builder(Color::new(0.2, 0.333333, 0.168627, 1.0), (476, 140))
         .offset(vec2(-3264.0, -3136.0))
         .set_props(&[
@@ -10606,6 +10609,7 @@ pub fn init(res: &mut Resources) -> Level {
     enemies.push(|idx| Enemy::new(Demon, idx, res, vec2(6785.0, -1609.0)));
 
     Level {
+        objective,
         background,
         animals,
         buildings,

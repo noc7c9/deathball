@@ -8,7 +8,7 @@ pub struct Animal {
     handle: physics::DynamicHandle,
     sprite: Sprite,
     pub damage: u8,
-    is_affected_by_death_ball: bool,
+    pub is_affected_by_death_ball: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -130,10 +130,6 @@ impl Animal {
     pub fn random(idx: GenerationalIndex, res: &mut Resources, position: Vec2) -> Self {
         let variant = Animal::VARIANTS[rand::gen_range(0, Animal::VARIANTS.len())];
         Animal::new(variant, idx, res, position)
-    }
-
-    pub fn is_affected_by_death_ball(&mut self, value: bool) {
-        self.is_affected_by_death_ball = value;
     }
 
     pub fn update(&mut self, res: &mut Resources, death_ball: &DeathBall) {

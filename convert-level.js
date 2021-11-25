@@ -1,6 +1,13 @@
 const fs = require('fs');
 const util = require('util');
 
+const OBJECTIVES_MAP = {
+    1: 'kill_enemies',
+    2: 'destroy_buildings',
+    3: 'save_animals',
+    4: 'kill_bosses',
+};
+
 const PROPS_MAP = {
     0: 'Grass1',
     1: 'Grass2',
@@ -148,6 +155,14 @@ function main() {
 
     log('Converting', filename);
     // log(`Updated ${new Date().toISOString()}`);
+
+    {
+        const { objective, objective_count } = data.find(
+            (datum) => datum.objective != null,
+        );
+        const fn = OBJECTIVES_MAP[objective];
+        level.objective = `${fn}(${objective_count})`;
+    }
 
     /***
      * scenario opts
@@ -338,6 +353,7 @@ function log(...args) {
 }
 
 function printLevel({
+    objective,
     bgColor,
     bgSize,
     bgOffset,
@@ -356,10 +372,13 @@ use crate::{
     enemies::{ Enemy, Variant::*},
     entities::Entities,
     levels::Level,
+    objectives::Objective,
     Resources,
 };
 
 pub fn init(res: &mut Resources) -> Level {
+    let objective = Objective::${objective};
+
     let background =
         Background::builder(Color::new(${bgColor.map(to_float).join(',')}), 
         (${bgSize[0]}, ${bgSize[1]}))
@@ -402,6 +421,7 @@ pub fn init(res: &mut Resources) -> Level {
         .join('\n    ')}
 
     Level {
+        objective,
         background,
         animals,
         buildings,

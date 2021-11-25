@@ -10,6 +10,7 @@ use crate::{
     groups,
     hit_effect::HitEffect,
     levels::Level,
+    objectives::Objective,
     physics::{PhysicsEvent, PhysicsEventKind},
     Resources,
 };
@@ -17,6 +18,7 @@ use crate::{
 use super::Scene;
 
 pub struct Combat {
+    objective: Objective,
     background: Background,
     death_ball: DeathBall,
     animals: Entities<Animal, { groups::ANIMAL }>,
@@ -30,6 +32,7 @@ impl Combat {
         let death_ball = DeathBall::new(res, Vec2::ZERO);
         let hit_effects = Entities::<HitEffect, { groups::HIT_EFFECT }>::new();
         Combat {
+            objective: level.objective,
             background: level.background,
             animals: level.animals,
             buildings: level.buildings,
@@ -37,6 +40,17 @@ impl Combat {
             death_ball,
             hit_effects,
         }
+    }
+}
+
+impl Combat {
+    fn get_death_ball_size(&self) -> u8 {
+        let size = self
+            .animals
+            .into_iter()
+            .filter(|a| a.is_affected_by_death_ball)
+            .count();
+        size as u8
     }
 }
 
@@ -78,7 +92,10 @@ impl Scene for Combat {
         // DeathBall with Animal
         if idx1 == groups::DEATH_BALL && idx2.group() == groups::ANIMAL {
             let animal = &mut self.animals[idx2];
-            animal.is_affected_by_death_ball(true);
+            animal.is_affected_by_death_ball = true;
+
+            self.objective
+                .on_update_death_ball_count(self.get_death_ball_size());
 
             return;
         }
@@ -88,6 +105,10 @@ impl Scene for Combat {
             let animal = &mut self.animals[idx1];
             let building = &mut self.buildings[idx2];
             building.damage(animal.damage);
+
+            if building.is_destroyed() {
+                self.objective.on_destroy_building();
+            }
 
             // spawn hit effects on contact
             if let PhysicsEventKind::ContactStart { point } = event.kind {
@@ -111,6 +132,10 @@ impl Scene for Combat {
                 PhysicsEventKind::ContactStart { point } => {
                     enemy.damage(animal.damage);
 
+                    if enemy.is_dead() {
+                        self.objective.on_kill_enemy();
+                    }
+
                     // spawn hit effects on contact
                     self.hit_effects.push(|idx| HitEffect::new(idx, point));
                 }
@@ -131,13 +156,20 @@ impl Scene for Combat {
             let enemy_pos = res.physics.get_position(enemy_handle);
             let direction = (animal_pos - enemy_pos).normalize_or_zero();
 
-            animal.is_affected_by_death_ball(false);
+            animal.is_affected_by_death_ball = false;
             res.physics
                 .apply_impulse(animal_handle, direction * enemy.attack_impulse);
+
+            self.objective
+                .on_update_death_ball_count(self.get_death_ball_size());
         }
     }
 
-    fn update_ui(&mut self, _res: &mut Resources, _ctx: &egui::CtxRef) -> Option<Box<dyn Scene>> {
+    fn update_ui(&mut self, _res: &mut Resources, ctx: &egui::CtxRef) -> Option<Box<dyn Scene>> {
+        egui::Window::new("Objective").show(ctx, |ui| {
+            ui.label(self.objective.progress_string());
+        });
+
         None
     }
 

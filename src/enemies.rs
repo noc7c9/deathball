@@ -194,6 +194,14 @@ impl Enemy {
         }
     }
 
+    pub fn is_dead(&self) -> bool {
+        if let Status::Alive { health, .. } = &self.status {
+            health.is_empty()
+        } else {
+            false
+        }
+    }
+
     pub fn update(&mut self, res: &mut Resources) {
         match self.status {
             Status::Alive {
