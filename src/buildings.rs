@@ -320,23 +320,18 @@ impl Building {
         Building::new(Building::VARIANTS[7], idx, res, position)
     }
 
-    pub fn damage(&mut self, damage: u8) {
+    /// Returns whether or not the building was destroyed
+    pub fn damage(&mut self, damage: u8) -> bool {
         if let Status::Destructible { ref mut health, .. } = &mut self.status {
             health.damage(damage.into());
             if health.is_empty() {
                 self.status = Status::Destroyed {
                     fade_timer: FADE_TIME,
                 };
+                return true;
             }
         }
-    }
-
-    pub fn is_destroyed(&self) -> bool {
-        if let Status::Destructible { health, .. } = &self.status {
-            health.is_empty()
-        } else {
-            false
-        }
+        false
     }
 
     pub fn update(

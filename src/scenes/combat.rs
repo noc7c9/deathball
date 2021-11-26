@@ -104,9 +104,9 @@ impl Scene for Combat {
         if idx1.group() == groups::ANIMAL && idx2.group() == groups::BUILDING {
             let animal = &mut self.animals[idx1];
             let building = &mut self.buildings[idx2];
-            building.damage(animal.damage);
 
-            if building.is_destroyed() {
+            let just_destroyed = building.damage(animal.damage);
+            if just_destroyed {
                 self.objective.on_destroy_building();
             }
 
@@ -130,9 +130,8 @@ impl Scene for Combat {
 
                 // will only happen for collision body
                 PhysicsEventKind::ContactStart { point } => {
-                    enemy.damage(animal.damage);
-
-                    if enemy.is_dead() {
+                    let just_killed = enemy.damage(animal.damage);
+                    if just_killed {
                         self.objective.on_kill_enemy();
                     }
 

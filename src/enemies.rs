@@ -183,23 +183,18 @@ impl Enemy {
         self.nearby_animals.retain(|a| *a != animal);
     }
 
-    pub fn damage(&mut self, damage: u8) {
+    /// Returns whether or not the enemy was killed
+    pub fn damage(&mut self, damage: u8) -> bool {
         if let Status::Alive { ref mut health, .. } = &mut self.status {
             health.damage(damage.into());
             if health.is_empty() {
                 self.status = Status::Dead {
                     fade_timer: FADE_TIME,
                 };
+                return true;
             }
         }
-    }
-
-    pub fn is_dead(&self) -> bool {
-        if let Status::Alive { health, .. } = &self.status {
-            health.is_empty()
-        } else {
-            false
-        }
+        false
     }
 
     pub fn update(&mut self, res: &mut Resources) {
