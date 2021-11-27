@@ -263,7 +263,6 @@ enum AttackStatus {
     PreAttack {
         timer: f32,
         direction: Vec2,
-        handle: physics::SensorHandle,
     },
     InProgress {
         timer: f32,
@@ -298,9 +297,7 @@ impl Attack {
     }
 
     fn remove(&self, res: &mut Resources) {
-        if let AttackStatus::PreAttack { handle, .. } | AttackStatus::InProgress { handle, .. } =
-            self.status
-        {
+        if let AttackStatus::InProgress { handle, .. } = self.status {
             res.physics.remove(handle);
         }
     }
@@ -315,6 +312,11 @@ impl Attack {
             let target_position = res.physics.get_position(target);
             (target_position - enemy_position).normalize_or_zero()
         };
+        let calc_position = |timer, direction| {
+            let amount = timer / ATTACK_DURATION;
+            let offset = lerp(ATTACK_OFFSET_START, ATTACK_OFFSET_END, amount) * direction;
+            enemy_position + offset * self.scale
+        };
 
         match self.status {
             AttackStatus::Charging { ref mut timer } => {
@@ -326,26 +328,22 @@ impl Attack {
 
                 if let Some(&target) = target {
                     let direction = get_direction_to(target);
-
-                    let collider = physics::ball(16. * self.scale).intersection_events();
-                    // spawn off screen so that it won't appear teleport on the first frame
-                    let position = Vec2::ONE * 99999999.;
-                    let handle = res.physics.add_sensor(self.idx, collider, position);
-
                     self.status = AttackStatus::PreAttack {
                         timer: 0.,
                         direction,
-                        handle,
                     };
                 }
             }
             AttackStatus::PreAttack {
                 ref mut timer,
                 direction,
-                handle,
             } => {
                 *timer += res.delta;
                 if *timer > PRE_ATTACK_DURATION {
+                    let collider = physics::ball(16. * self.scale).intersection_events();
+                    let position = calc_position(0., direction);
+                    let handle = res.physics.add_sensor(self.idx, collider, position);
+
                     self.status = AttackStatus::InProgress {
                         timer: 0.,
                         direction,
@@ -371,10 +369,8 @@ impl Attack {
                 }
 
                 // move the sensor
-                let amount = *timer / ATTACK_DURATION;
-                let offset = lerp(ATTACK_OFFSET_START, ATTACK_OFFSET_END, amount) * *direction;
-                res.physics
-                    .set_position(handle, enemy_position + offset * self.scale);
+                let position = calc_position(*timer, *direction);
+                res.physics.set_position(handle, position);
 
                 let angle = -direction.angle_between(Vec2::X);
                 res.physics.set_rotation(handle, angle);
