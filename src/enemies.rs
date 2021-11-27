@@ -17,14 +17,8 @@ const HEALTH_BAR_SIZE: (f32, f32) = (32., 14.);
 const HEALTH_BAR_OFFSET: (f32, f32) = (16., 36.);
 
 enum Status {
-    Alive {
-        health: Health,
-        speed: f32,
-        attack: Attack,
-    },
-    Dead {
-        fade_timer: f32,
-    },
+    Alive { health: Health, speed: f32 },
+    Dead { fade_timer: f32 },
 }
 
 pub struct Enemy {
@@ -34,6 +28,7 @@ pub struct Enemy {
     nearby_animals: Vec<physics::Handle>,
     sprite: Sprite,
     status: Status,
+    attack: Attack,
     pub attack_impulse: f32,
 }
 
@@ -165,13 +160,11 @@ impl Enemy {
             handle,
             sensor_handle,
             nearby_animals: Vec::new(),
+            attack: Attack::new(idx, res, scale, variant.attack_cooldown),
             attack_impulse: variant.attack_impulse,
             status: Status::Alive {
                 health: Health::new(variant.health, health_bar_size, health_bar_offset),
-
                 speed: variant.speed,
-
-                attack: Attack::new(idx, res, scale, variant.attack_cooldown),
             },
         }
     }
@@ -198,18 +191,17 @@ impl Enemy {
     }
 
     pub fn update(&mut self, res: &mut Resources) {
+        let position = res.physics.get_position(self.handle);
+        self.attack
+            .update(res, position, self.nearby_animals.first());
+
         match self.status {
             Status::Alive {
                 speed,
                 ref mut health,
-                ref mut attack,
                 ..
             } => {
                 health.update(res.delta);
-
-                let position = res.physics.get_position(self.handle);
-
-                attack.update(res, position, self.nearby_animals.first());
 
                 // ensure sensor collider moves with the enemy
                 res.physics.set_position(self.sensor_handle, position);
@@ -226,6 +218,7 @@ impl Enemy {
             Status::Dead { ref mut fade_timer } => {
                 *fade_timer -= res.delta;
                 if *fade_timer < 0. {
+                    self.attack.remove(res);
                     res.physics.remove(self.handle);
                     res.physics.remove(self.sensor_handle);
                     res.deleted.push(self.idx);
@@ -238,21 +231,18 @@ impl Enemy {
         let position = res.physics.get_position(self.handle);
         let rotation = res.physics.get_rotation(self.handle);
         match self.status {
-            Status::Alive {
-                ref health,
-                ref attack,
-                ..
-            } => {
+            Status::Alive { ref health, .. } => {
                 self.sprite
-                    .draw_tint(position, rotation, attack.enemy_tint());
+                    .draw_tint(position, rotation, self.attack.enemy_tint());
                 health.draw(position);
-                attack.draw(res);
             }
             Status::Dead { fade_timer } => {
                 let alpha = fade_timer / FADE_TIME;
                 self.sprite.draw_alpha(position, rotation, alpha);
             }
         }
+
+        self.attack.draw(res);
     }
 }
 
@@ -304,6 +294,14 @@ impl Attack {
             Color::new(1., t, t, 1.)
         } else {
             WHITE
+        }
+    }
+
+    fn remove(&self, res: &mut Resources) {
+        if let AttackStatus::PreAttack { handle, .. } | AttackStatus::InProgress { handle, .. } =
+            self.status
+        {
+            res.physics.remove(handle);
         }
     }
 
