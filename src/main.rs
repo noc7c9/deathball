@@ -14,7 +14,7 @@ use camera::Camera;
 use entities::GenerationalIndex;
 use input::Input;
 use physics::{Physics, PhysicsEvent};
-use scenes::Scene;
+use scenes::{Scene, SceneChange};
 
 mod animals;
 mod background;
@@ -72,7 +72,7 @@ async fn main() {
     let mut physics_events: Vec<PhysicsEvent> = Vec::new();
 
     let mut scene: Box<dyn Scene> = Box::new(scenes::MainMenu::new());
-    let mut new_scene: Option<Box<dyn Scene>>;
+    let mut new_scene;
 
     egui_macroquad::cfg(|ctx| {
         use egui::*;
@@ -135,8 +135,12 @@ async fn main() {
 
         res.camera.disable();
 
-        if let Some(new_scene) = new_scene.take() {
-            scene = new_scene;
+        match new_scene {
+            SceneChange::None => {}
+            SceneChange::Quit => break,
+            SceneChange::Change(new_scene) => {
+                scene = new_scene;
+            }
         }
 
         next_frame().await

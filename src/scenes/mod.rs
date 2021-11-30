@@ -1,13 +1,19 @@
 use crate::{physics::PhysicsEvent, Resources};
 
 pub trait Scene {
-    fn update(&mut self, res: &mut Resources) -> Option<Box<dyn Scene>>;
+    fn update(&mut self, res: &mut Resources) -> SceneChange;
 
     fn handle_physics_event(&mut self, _res: &mut Resources, _event: PhysicsEvent) {}
 
-    fn update_ui(&mut self, res: &mut Resources, ctx: &egui::CtxRef) -> Option<Box<dyn Scene>>;
+    fn update_ui(&mut self, res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange;
 
     fn draw(&self, res: &Resources);
+}
+
+pub enum SceneChange {
+    None,
+    Change(Box<dyn Scene>),
+    Quit,
 }
 
 // individual scenes

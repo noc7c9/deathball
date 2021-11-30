@@ -15,7 +15,7 @@ use crate::{
     Resources,
 };
 
-use super::Scene;
+use super::{Scene, SceneChange};
 
 pub struct Combat {
     objective: Objective,
@@ -55,7 +55,7 @@ impl Combat {
 }
 
 impl Scene for Combat {
-    fn update(&mut self, res: &mut Resources) -> Option<Box<dyn Scene>> {
+    fn update(&mut self, res: &mut Resources) -> SceneChange {
         // Update entities
         self.death_ball.update(res);
         for animal in &mut self.animals {
@@ -82,7 +82,7 @@ impl Scene for Combat {
             };
         }
 
-        None
+        SceneChange::None
     }
 
     fn handle_physics_event(&mut self, res: &mut Resources, event: PhysicsEvent) {
@@ -164,12 +164,12 @@ impl Scene for Combat {
         }
     }
 
-    fn update_ui(&mut self, _res: &mut Resources, ctx: &egui::CtxRef) -> Option<Box<dyn Scene>> {
+    fn update_ui(&mut self, _res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange {
         egui::Window::new("Objective").show(ctx, |ui| {
             ui.label(self.objective.progress_string());
         });
 
-        None
+        SceneChange::None
     }
 
     fn draw(&self, res: &Resources) {

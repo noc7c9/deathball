@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 
 use crate::{levels, scenes, Resources};
 
-use super::Scene;
+use super::{Scene, SceneChange};
 
 const ENABLE_LEVEL_SELECT: bool = false;
 const BACKGROUND_COLOR: Color = Color::new(0.243, 0.133, 0.133, 1.0);
@@ -16,11 +16,11 @@ impl MainMenu {
 }
 
 impl Scene for MainMenu {
-    fn update(&mut self, _res: &mut Resources) -> Option<Box<dyn Scene>> {
-        None
+    fn update(&mut self, _res: &mut Resources) -> SceneChange {
+        SceneChange::None
     }
 
-    fn update_ui(&mut self, res: &mut Resources, ctx: &egui::CtxRef) -> Option<Box<dyn Scene>> {
+    fn update_ui(&mut self, res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange {
         use egui::*;
 
         Window::new("title text")
@@ -42,6 +42,8 @@ impl Scene for MainMenu {
                 })
             });
 
+        let mut scene_change = SceneChange::None;
+
         Window::new("buttons")
             .title_bar(false)
             .resizable(false)
@@ -50,15 +52,20 @@ impl Scene for MainMenu {
                 ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
                     ui.spacing_mut().button_padding = vec2(0., 80.);
 
-                    ui.button("New Game");
-
-                    ui.button("Quit");
+                    if ui.button("New Game").clicked() {
+                        let level = levels::tutorial_scenario::init(res);
+                        scene_change =
+                            SceneChange::Change(Box::new(scenes::Combat::new(res, level)));
+                    }
+                    if ui.button("Quit").clicked() {
+                        scene_change = SceneChange::Quit;
+                    }
                 })
             });
 
         if ENABLE_LEVEL_SELECT {
             let mut level_to_load = None;
-            Window::new("Pick a level to load")
+            Window::new("Load Level")
                 .resizable(false)
                 .collapsible(false)
                 .anchor(egui::Align2::LEFT_TOP, (16., 16.))
@@ -75,11 +82,12 @@ impl Scene for MainMenu {
                         level_to_load = Some(levels::final_scenario::init(res));
                     }
                 });
-            return level_to_load
-                .map(|level| -> Box<dyn Scene> { Box::new(scenes::Combat::new(res, level)) });
+            scene_change = level_to_load.map_or(SceneChange::None, |level| {
+                SceneChange::Change(Box::new(scenes::Combat::new(res, level)))
+            });
         }
 
-        None
+        scene_change
     }
 
     fn draw(&self, _res: &Resources) {
