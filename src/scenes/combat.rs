@@ -4,6 +4,7 @@ use crate::{
     animals::Animal,
     background::Background,
     buildings::Building,
+    camera::Camera,
     death_ball::DeathBall,
     enemies::Enemy,
     entities::Entities,
@@ -17,7 +18,15 @@ use crate::{
 
 use super::{Scene, SceneChange};
 
+const PAN_SPEED: f32 = 15.;
+
+const INITIAL_ZOOM: f32 = 0.0015;
+const ZOOM_FACTOR: f32 = 1.05;
+const MIN_ZOOM: f32 = 0.0005;
+const MAX_ZOOM: f32 = 0.005;
+
 pub struct Combat {
+    camera: Camera,
     objective: Objective,
     background: Background,
     death_ball: DeathBall,
@@ -32,6 +41,7 @@ impl Combat {
         let death_ball = DeathBall::new(res, Vec2::ZERO);
         let hit_effects = Entities::<HitEffect, { groups::HIT_EFFECT }>::new();
         Combat {
+            camera: Camera::new(Vec2::ZERO, INITIAL_ZOOM),
             objective: level.objective,
             background: level.background,
             animals: level.animals,
@@ -56,8 +66,28 @@ impl Combat {
 
 impl Scene for Combat {
     fn update(&mut self, res: &mut Resources) -> SceneChange {
+        // Update camera
+        {
+            // Mouse Panning
+            if let Some(drag) = res.input.get_mouse_right_button_drag() {
+                let previous = self.camera.screen_to_world(drag.previous);
+                let current = self.camera.screen_to_world(drag.current);
+                self.camera.target += previous - current;
+            }
+            // WASD Panning
+            else {
+                self.camera.target += res.input.get_wasd_axes() * PAN_SPEED;
+            }
+
+            // Mouse Zoom
+            if let Some(amount) = res.input.get_mouse_wheel() {
+                self.camera.zoom =
+                    (self.camera.zoom * ZOOM_FACTOR.powf(amount)).clamp(MIN_ZOOM, MAX_ZOOM);
+            }
+        }
+
         // Update entities
-        self.death_ball.update(res);
+        self.death_ball.update(res, &self.camera);
         for animal in &mut self.animals {
             animal.update(res, &self.death_ball);
         }
@@ -173,7 +203,7 @@ impl Scene for Combat {
     }
 
     fn draw(&self, res: &Resources) {
-        res.camera.enable();
+        self.camera.enable();
 
         self.background.draw();
         self.death_ball.draw(res);
@@ -189,5 +219,7 @@ impl Scene for Combat {
         for building in &self.buildings {
             building.draw(res);
         }
+
+        self.camera.disable();
     }
 }

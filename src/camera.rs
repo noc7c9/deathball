@@ -1,23 +1,13 @@
 use macroquad::prelude::*;
 
-const PAN_SPEED: f32 = 15.;
-
-const INITIAL_ZOOM: f32 = 0.0015;
-const ZOOM_FACTOR: f32 = 1.05;
-const MIN_ZOOM: f32 = 0.0005;
-const MAX_ZOOM: f32 = 0.005;
-
 pub struct Camera {
     pub target: Vec2,
     pub zoom: f32,
 }
 
 impl Camera {
-    pub fn new() -> Self {
-        Self {
-            target: vec2(0., 0.),
-            zoom: INITIAL_ZOOM,
-        }
+    pub fn new(target: Vec2, zoom: f32) -> Self {
+        Self { target, zoom }
     }
 
     fn get_macroquad_camera(&self) -> Camera2D {
@@ -42,23 +32,5 @@ impl Camera {
 
     pub fn disable(&self) {
         set_default_camera();
-    }
-
-    pub fn update(&mut self, input: &crate::input::Input) {
-        // Mouse Panning
-        if let Some(drag) = input.get_mouse_right_button_drag() {
-            let previous = self.screen_to_world(drag.previous);
-            let current = self.screen_to_world(drag.current);
-            self.target += previous - current;
-        }
-        // WASD Panning
-        else {
-            self.target += input.get_wasd_axes() * PAN_SPEED;
-        }
-
-        // Mouse Zoom
-        if let Some(amount) = input.get_mouse_wheel() {
-            self.zoom = (self.zoom * ZOOM_FACTOR.powf(amount)).clamp(MIN_ZOOM, MAX_ZOOM);
-        }
     }
 }

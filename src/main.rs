@@ -10,7 +10,6 @@ mod scenes;
 mod spritesheet;
 
 use assets::Assets;
-use camera::Camera;
 use entities::GenerationalIndex;
 use input::Input;
 use physics::{Physics, PhysicsEvent};
@@ -43,7 +42,6 @@ pub mod groups {
 pub struct Resources {
     assets: Assets,
     input: Input,
-    camera: Camera,
     physics: Physics,
     deleted: Vec<GenerationalIndex>,
     delta: f32,
@@ -64,7 +62,6 @@ async fn main() {
     let mut res = Resources {
         assets: Assets::load().await,
         input: Input::new(),
-        camera: Camera::new(),
         physics: Physics::new(),
         deleted: Vec::new(),
         delta: 0.,
@@ -113,7 +110,6 @@ async fn main() {
 
         // Update subsystems
         res.input.update();
-        res.camera.update(&res.input);
         res.physics.update(&mut physics_events);
 
         for event in physics_events.drain(..) {
@@ -132,8 +128,6 @@ async fn main() {
         }
 
         egui_macroquad::draw();
-
-        res.camera.disable();
 
         match new_scene {
             SceneChange::None => {}

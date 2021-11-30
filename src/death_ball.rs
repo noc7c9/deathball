@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{groups, physics, spritesheet::Sprite, Resources};
+use crate::{camera::Camera, groups, physics, spritesheet::Sprite, Resources};
 
 pub struct DeathBall {
     handle: physics::SensorHandle,
@@ -23,9 +23,9 @@ impl DeathBall {
         res.physics.get_position(self.handle)
     }
 
-    pub fn update(&mut self, res: &mut Resources) {
+    pub fn update(&mut self, res: &mut Resources, camera: &Camera) {
         if let Some(position) = res.input.get_mouse_left_button_down() {
-            let position = res.camera.screen_to_world(position);
+            let position = camera.screen_to_world(position);
             res.physics.set_position(self.handle, position);
         }
     }
