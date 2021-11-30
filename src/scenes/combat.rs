@@ -173,6 +173,8 @@ impl Scene for Combat {
     }
 
     fn draw(&self, res: &Resources) {
+        res.camera.enable();
+
         self.background.draw();
         self.death_ball.draw(res);
         for hit_effect in &self.hit_effects {

@@ -52,9 +52,9 @@ pub struct Resources {
 pub fn window_config() -> Conf {
     Conf {
         window_title: "Giant Horse Deathball".to_owned(),
-        window_width: 1200,
-        window_height: 1200,
-        high_dpi: true,
+        window_width: 1600,
+        window_height: 900,
+        // high_dpi: true,
         ..Default::default()
     }
 }
@@ -75,8 +75,10 @@ async fn main() {
     let mut new_scene: Option<Box<dyn Scene>>;
 
     egui_macroquad::cfg(|ctx| {
+        use egui::*;
+
         ctx.set_fonts({
-            let mut fonts = egui::FontDefinitions::default();
+            let mut fonts = FontDefinitions::default();
 
             fonts
                 .font_data
@@ -84,12 +86,24 @@ async fn main() {
 
             fonts
                 .fonts_for_family
-                .get_mut(&egui::FontFamily::Proportional)
+                .get_mut(&FontFamily::Proportional)
                 .unwrap()
                 .insert(0, "font".to_owned());
 
             fonts
+                .family_and_size
+                .insert(TextStyle::Heading, (FontFamily::Proportional, 40.));
+
+            fonts
         });
+
+        let mut style: egui::Style = (*ctx.style()).clone();
+        style.spacing.window_padding = vec2(14., 14.);
+        style.visuals.window_shadow.extrusion = 0.;
+        style.visuals.widgets.noninteractive.bg_stroke.width = 0.;
+        style.visuals.widgets.noninteractive.bg_fill = Color32::from_black_alpha(187);
+        style.visuals.widgets.noninteractive.fg_stroke.color = Color32::WHITE;
+        ctx.set_style(style);
     });
 
     loop {
@@ -111,8 +125,6 @@ async fn main() {
         });
 
         // Draw
-        res.camera.enable();
-
         scene.draw(&res);
 
         if DRAW_COLLIDERS {
