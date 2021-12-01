@@ -40,13 +40,13 @@ impl Input {
     pub fn get_wasd_axes(&self) -> Vec2 {
         let mut delta = vec2(0., 0.);
         if is_key_down(KeyCode::W) {
-            delta.y += 1.0;
+            delta.y -= 1.0;
         }
         if is_key_down(KeyCode::A) {
             delta.x -= 1.0;
         }
         if is_key_down(KeyCode::S) {
-            delta.y -= 1.0;
+            delta.y += 1.0;
         }
         if is_key_down(KeyCode::D) {
             delta.x += 1.0;
