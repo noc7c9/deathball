@@ -10,8 +10,8 @@ const BACKGROUND_COLOR: Color = Color::new(0.243, 0.133, 0.133, 1.0);
 pub struct MainMenu;
 
 impl MainMenu {
-    pub fn new() -> Self {
-        MainMenu
+    pub fn boxed() -> Box<Self> {
+        Box::new(MainMenu)
     }
 }
 
@@ -53,9 +53,8 @@ impl Scene for MainMenu {
                     ui.spacing_mut().button_padding = vec2(0., 80.);
 
                     if ui.button("New Game").clicked() {
-                        let level = levels::tutorial_scenario::init(res);
                         scene_change =
-                            SceneChange::Change(Box::new(scenes::Combat::new(res, level)));
+                            SceneChange::Change(scenes::Combat::boxed(res, levels::Tutorial));
                     }
                     if ui.button("Quit").clicked() {
                         scene_change = SceneChange::Quit;
@@ -71,19 +70,19 @@ impl Scene for MainMenu {
                 .anchor(egui::Align2::LEFT_TOP, (16., 16.))
                 .show(ctx, |ui| {
                     if ui.button("Test").clicked() {
-                        level_to_load = Some(levels::test::init(res));
+                        level_to_load = Some(levels::Test);
                     } else if ui.button("Tutorial Scenario").clicked() {
-                        level_to_load = Some(levels::tutorial_scenario::init(res));
+                        level_to_load = Some(levels::Tutorial);
                     } else if ui.button("Scenario 1").clicked() {
-                        level_to_load = Some(levels::scenario_1::init(res));
+                        level_to_load = Some(levels::Scenario1);
                     } else if ui.button("Scenario 2").clicked() {
-                        level_to_load = Some(levels::scenario_2::init(res));
+                        level_to_load = Some(levels::Scenario2);
                     } else if ui.button("Final Scenario").clicked() {
-                        level_to_load = Some(levels::final_scenario::init(res));
+                        level_to_load = Some(levels::Final);
                     }
                 });
             scene_change = level_to_load.map_or(SceneChange::None, |level| {
-                SceneChange::Change(Box::new(scenes::Combat::new(res, level)))
+                SceneChange::Change(scenes::Combat::boxed(res, level))
             });
         }
 

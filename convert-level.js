@@ -371,16 +371,16 @@ use crate::{
     buildings::{ Building, Variant::* },
     enemies::{ Enemy, Variant::*},
     entities::Entities,
-    levels::Level,
+    levels::LevelData,
     objectives::Objective,
     Resources,
 };
 
-pub fn init(res: &mut Resources) -> Level {
+pub fn init(res: &mut Resources) -> LevelData {
     let objective = Objective::${objective};
 
     let background =
-        Background::builder(Color::new(${bgColor.map(to_float).join(',')}), 
+        Background::builder(Color::new(${bgColor.map(to_float).join(',')}),
         (${bgSize[0]}, ${bgSize[1]}))
         .offset(${to_vec2(bgOffset)})
         .set_props(&[
@@ -420,7 +420,7 @@ pub fn init(res: &mut Resources) -> Level {
         )
         .join('\n    ')}
 
-    Level {
+    LevelData {
         objective,
         background,
         animals,

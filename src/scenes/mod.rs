@@ -23,3 +23,6 @@ pub use main_menu::MainMenu;
 
 pub mod combat;
 pub use combat::Combat;
+
+pub mod level_select;
+pub use level_select::LevelSelect;

@@ -12,6 +12,7 @@ mod spritesheet;
 use assets::Assets;
 use entities::GenerationalIndex;
 use input::Input;
+use levels::Level;
 use physics::{Physics, PhysicsEvent};
 use scenes::{Scene, SceneChange};
 
@@ -23,8 +24,6 @@ mod enemies;
 mod health;
 mod hit_effect;
 mod objectives;
-
-const DRAW_COLLIDERS: bool = false;
 
 pub mod groups {
     pub const DEATH_BALL: super::GenerationalIndex = super::GenerationalIndex::single(0);
@@ -45,6 +44,9 @@ pub struct Resources {
     physics: Physics,
     deleted: Vec<GenerationalIndex>,
     delta: f32,
+
+    score: u32,
+    beaten: std::collections::HashSet<Level>,
 }
 
 pub fn window_config() -> Conf {
@@ -65,10 +67,12 @@ async fn main() {
         physics: Physics::new(),
         deleted: Vec::new(),
         delta: 0.,
+        score: 0,
+        beaten: Default::default(),
     };
     let mut physics_events: Vec<PhysicsEvent> = Vec::new();
 
-    let mut scene: Box<dyn Scene> = Box::new(scenes::MainMenu::new());
+    let mut scene: Box<dyn Scene> = scenes::MainMenu::boxed();
     let mut new_scene;
 
     egui_macroquad::cfg(|ctx| {
@@ -90,6 +94,10 @@ async fn main() {
             fonts
                 .family_and_size
                 .insert(TextStyle::Heading, (FontFamily::Proportional, 40.));
+
+            fonts
+                .family_and_size
+                .insert(TextStyle::Body, (FontFamily::Proportional, 18.));
 
             fonts
         });
@@ -117,15 +125,14 @@ async fn main() {
         }
 
         egui_macroquad::ui(|egui_ctx| {
-            new_scene = scene.update_ui(&mut res, egui_ctx);
+            let change = scene.update_ui(&mut res, egui_ctx);
+            if !matches!(change, SceneChange::None) {
+                new_scene = change
+            }
         });
 
         // Draw
         scene.draw(&res);
-
-        if DRAW_COLLIDERS {
-            res.physics.draw_colliders();
-        }
 
         egui_macroquad::draw();
 

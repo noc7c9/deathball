@@ -13,10 +13,12 @@ use crate::{
     levels::Level,
     objectives::Objective,
     physics::{PhysicsEvent, PhysicsEventKind},
-    Resources,
+    scenes, Resources,
 };
 
 use super::{Scene, SceneChange};
+
+const DRAW_COLLIDERS: bool = false;
 
 const PAN_SPEED: f32 = 15.;
 
@@ -27,6 +29,7 @@ const MAX_ZOOM: f32 = 0.005;
 
 pub struct Combat {
     camera: Camera,
+    level: Level,
     objective: Objective,
     background: Background,
     death_ball: DeathBall,
@@ -37,19 +40,22 @@ pub struct Combat {
 }
 
 impl Combat {
-    pub fn new(res: &mut Resources, level: Level) -> Self {
+    pub fn boxed(res: &mut Resources, level: Level) -> Box<Self> {
+        res.physics.reset();
+        let data = level.init(res);
         let death_ball = DeathBall::new(res, Vec2::ZERO);
         let hit_effects = Entities::<HitEffect, { groups::HIT_EFFECT }>::new();
-        Combat {
+        Box::new(Combat {
             camera: Camera::new(Vec2::ZERO, INITIAL_ZOOM),
-            objective: level.objective,
-            background: level.background,
-            animals: level.animals,
-            buildings: level.buildings,
-            enemies: level.enemies,
+            level,
+            objective: data.objective,
+            background: data.background,
+            animals: data.animals,
+            buildings: data.buildings,
+            enemies: data.enemies,
             death_ball,
             hit_effects,
-        }
+        })
     }
 }
 
@@ -110,6 +116,12 @@ impl Scene for Combat {
                 groups::HIT_EFFECT => self.hit_effects.remove(idx),
                 _ => {}
             };
+        }
+
+        // Handle objective completion
+        if self.objective.is_complete() {
+            res.beaten.insert(self.level);
+            return SceneChange::Change(scenes::LevelSelect::boxed());
         }
 
         SceneChange::None
@@ -218,6 +230,10 @@ impl Scene for Combat {
         }
         for building in &self.buildings {
             building.draw(res);
+        }
+
+        if DRAW_COLLIDERS {
+            res.physics.draw_colliders();
         }
 
         self.camera.disable();

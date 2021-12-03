@@ -138,6 +138,11 @@ impl Physics {
         KinematicHandle(collider_handle, rigid_body_handle)
     }
 
+    pub fn reset(&mut self) {
+        let old = std::mem::replace(self, Self::new());
+        drop(old);
+    }
+
     pub fn remove(&mut self, handle: impl Into<Handle>) {
         match handle.into() {
             Handle::Static(StaticHandle(handle)) | Handle::Sensor(SensorHandle(handle)) => {

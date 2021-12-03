@@ -6,12 +6,12 @@ use crate::{
     buildings::{Building, Variant::*},
     enemies::{Enemy, Variant::*},
     entities::Entities,
-    levels::Level,
+    levels::LevelData,
     objectives::Objective,
     Resources,
 };
 
-pub fn init(res: &mut Resources) -> Level {
+pub fn init(res: &mut Resources) -> LevelData {
     let objective = Objective::kill_bosses(5);
 
     let background = Background::builder(Color::new(0.560784, 0.223529, 0.223529, 1.0), (178, 122))
@@ -1705,7 +1705,7 @@ pub fn init(res: &mut Resources) -> Level {
     enemies.push(|idx| Enemy::new(Demon, idx, res, vec2(1339.0, 207.0)));
     enemies.push(|idx| Enemy::new(Demon, idx, res, vec2(1792.0, -319.0)));
 
-    Level {
+    LevelData {
         objective,
         background,
         animals,

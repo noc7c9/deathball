@@ -1,9 +1,32 @@
 use crate::{
     animals::Animal, background::Background, buildings::Building, enemies::Enemy,
-    entities::Entities, groups, objectives::Objective,
+    entities::Entities, groups, objectives::Objective, Resources,
 };
 
-pub struct Level {
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+pub enum Level {
+    Test,
+    Tutorial,
+    Scenario1,
+    Scenario2,
+    Final,
+}
+
+pub use Level::*;
+
+impl Level {
+    pub fn init(&self, res: &mut Resources) -> LevelData {
+        match self {
+            Test => test::init(res),
+            Tutorial => tutorial_scenario::init(res),
+            Scenario1 => scenario_1::init(res),
+            Scenario2 => scenario_2::init(res),
+            Final => final_scenario::init(res),
+        }
+    }
+}
+
+pub struct LevelData {
     pub objective: Objective,
     pub background: Background,
     pub animals: Entities<Animal, { groups::ANIMAL }>,
@@ -12,12 +35,12 @@ pub struct Level {
 }
 
 // individual levels
-pub mod test;
+mod test;
 
-pub mod tutorial_scenario;
+mod tutorial_scenario;
 
-pub mod scenario_1;
+mod scenario_1;
 
-pub mod scenario_2;
+mod scenario_2;
 
-pub mod final_scenario;
+mod final_scenario;

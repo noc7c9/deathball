@@ -6,12 +6,12 @@ use crate::{
     buildings::Building,
     enemies::Enemy,
     entities::Entities,
-    levels::Level,
+    levels::LevelData,
     objectives::Objective,
     Resources,
 };
 
-pub fn init(res: &mut Resources) -> Level {
+pub fn init(res: &mut Resources) -> LevelData {
     let objective = Objective::none();
 
     let background =
@@ -68,7 +68,7 @@ pub fn init(res: &mut Resources) -> Level {
         animals.push(|idx| Animal::random(idx, res, vec2(x, y)));
     }
 
-    Level {
+    LevelData {
         objective,
         background,
         animals,
