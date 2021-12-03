@@ -114,29 +114,29 @@ impl Physics {
         DynamicHandle(collider_handle, rigid_body_handle)
     }
 
-    pub fn add_kinematic(
-        &mut self,
-        idx: GenerationalIndex,
-        my_collider: MyColliderBuilder,
-        position: Vec2,
-    ) -> KinematicHandle {
-        let collider = my_collider.inner.user_data(idx.to_u128()).build();
-        let mut rigid_body =
-            RigidBodyBuilder::new_kinematic_velocity_based().translation(position.into());
-        if my_collider.lock_rotations {
-            rigid_body = rigid_body.lock_rotations();
-        }
-        let rigid_body = rigid_body.build();
+    // pub fn add_kinematic(
+    //     &mut self,
+    //     idx: GenerationalIndex,
+    //     my_collider: MyColliderBuilder,
+    //     position: Vec2,
+    // ) -> KinematicHandle {
+    //     let collider = my_collider.inner.user_data(idx.to_u128()).build();
+    //     let mut rigid_body =
+    //         RigidBodyBuilder::new_kinematic_velocity_based().translation(position.into());
+    //     if my_collider.lock_rotations {
+    //         rigid_body = rigid_body.lock_rotations();
+    //     }
+    //     let rigid_body = rigid_body.build();
 
-        let rigid_body_handle = self.rigid_body_set.insert(rigid_body);
+    //     let rigid_body_handle = self.rigid_body_set.insert(rigid_body);
 
-        let collider_handle = self.collider_set.insert_with_parent(
-            collider,
-            rigid_body_handle,
-            &mut self.rigid_body_set,
-        );
-        KinematicHandle(collider_handle, rigid_body_handle)
-    }
+    //     let collider_handle = self.collider_set.insert_with_parent(
+    //         collider,
+    //         rigid_body_handle,
+    //         &mut self.rigid_body_set,
+    //     );
+    //     KinematicHandle(collider_handle, rigid_body_handle)
+    // }
 
     pub fn reset(&mut self) {
         let old = std::mem::replace(self, Self::new());
