@@ -121,7 +121,7 @@ impl Scene for Combat {
         // Handle objective completion
         if self.objective.is_complete() {
             res.beaten.insert(self.level);
-            return SceneChange::Change(scenes::LevelSelect::boxed());
+            return SceneChange::Change(scenes::LevelSelect::boxed(res));
         }
 
         SceneChange::None

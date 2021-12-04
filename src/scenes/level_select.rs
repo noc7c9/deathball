@@ -1,10 +1,11 @@
 use macroquad::prelude::*;
 
-use crate::{levels, scenes, Resources};
+use crate::{levels, scenes, spritesheet::Sprite, Resources};
 
 use super::{Scene, SceneChange};
 
 const BACKGROUND_COLOR: Color = Color::new(0.071, 0.219, 0.369, 1.0);
+
 const CHATTER_DOTS: &str = ". . . ";
 const CHATTER_MESSAGES: [&str; 11] = [
     "We need to deal with the animal menance",
@@ -21,24 +22,32 @@ const CHATTER_MESSAGES: [&str; 11] = [
 ];
 const CHATTER_TIME: f32 = 1.;
 
+const WANDER_INITIAL_POSITION: (f32, f32) = (237., 187.);
+const WANDER_TIME: (f32, f32) = (2., 10.);
+const WANDER_SPEED: (f32, f32) = (25., 50.);
+
 pub struct LevelSelect {
     chatter: Vec<&'static str>,
     dots: usize,
     timer: f32,
+    wanderer: Wanderer,
 }
 
 impl LevelSelect {
-    pub fn boxed() -> Box<Self> {
+    pub fn boxed(res: &mut Resources) -> Box<Self> {
         Box::new(LevelSelect {
             chatter: Vec::new(),
             dots: 0,
             timer: CHATTER_TIME,
+            wanderer: Wanderer::new(res),
         })
     }
 }
 
 impl Scene for LevelSelect {
     fn update(&mut self, res: &mut Resources) -> SceneChange {
+        self.wanderer.update(res);
+
         self.timer -= res.delta;
         if self.timer < 0. {
             self.timer = CHATTER_TIME;
@@ -144,5 +153,69 @@ impl Scene for LevelSelect {
 
     fn draw(&self, _res: &Resources) {
         clear_background(BACKGROUND_COLOR);
+        self.wanderer.draw();
+    }
+}
+
+struct Wanderer {
+    sprite: Sprite,
+    position: Vec2,
+    timer: f32,
+    speed: f32,
+    direction: f32,
+}
+
+impl Wanderer {
+    fn new(res: &mut Resources) -> Self {
+        let sprite = res.assets.enemies.sprite(vec2(1., 0.)).scale(3.33);
+        Wanderer {
+            sprite,
+            position: WANDER_INITIAL_POSITION.into(),
+            timer: Wanderer::random_timer(),
+            speed: Wanderer::random_speed(),
+            direction: Wanderer::random_direction(),
+        }
+    }
+
+    fn random_timer() -> f32 {
+        rand::gen_range(WANDER_TIME.0, WANDER_TIME.1)
+    }
+
+    fn random_speed() -> f32 {
+        rand::gen_range(WANDER_SPEED.0, WANDER_SPEED.1)
+    }
+
+    fn random_direction() -> f32 {
+        use std::f32::consts::PI;
+        rand::gen_range(-PI / 3., PI / 3.)
+    }
+
+    fn update(&mut self, res: &Resources) {
+        let direction = vec2(self.direction.cos(), self.direction.sin());
+        self.position += direction * self.speed * res.delta;
+
+        let region = {
+            let s = 64.;
+            Rect::new(s, s, screen_width() - s - s, screen_height() - s - s)
+        };
+        if !region.contains(self.position) {
+            self.timer = Wanderer::random_timer();
+            self.speed = Wanderer::random_speed();
+            self.direction += std::f32::consts::PI;
+
+            self.position.x = self.position.x.clamp(region.x, region.x + region.w);
+            self.position.y = self.position.y.clamp(region.y, region.y + region.h);
+        }
+
+        self.timer -= res.delta;
+        if self.timer < 0. {
+            self.timer = Wanderer::random_timer();
+            self.speed = Wanderer::random_speed();
+            self.direction += Wanderer::random_direction();
+        }
+    }
+
+    fn draw(&self) {
+        self.sprite.draw(self.position, 0.);
     }
 }
