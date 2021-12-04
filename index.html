@@ -1,0 +1,47 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Giant Horse Deathball</title>
+        <style>
+            html,
+            body,
+            canvas {
+                margin: 0px;
+                padding: 0px;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                position: absolute;
+                background: black;
+                z-index: 0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas id="glcanvas" tabindex="1"></canvas>
+        <script src="gl.js"></script>
+        <script>
+            document.addEventListener('keydown', onKeyDown, false);
+
+            function onKeyDown(evt) {
+                if (!evt.metaKey || evt.key !== 'Enter') return;
+                console.log(document.fullscreenElement);
+                if (document.fullscreenElement != null) {
+                    canvas.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+
+            // Disable context menu on canvas so that right click works in-game
+            canvas.addEventListener(
+                'contextmenu',
+                (e) => e.preventDefault(),
+                false,
+            );
+
+            load('deathball.wasm');
+        </script>
+    </body>
+</html>
