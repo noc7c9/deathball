@@ -37,6 +37,7 @@ pub struct Combat {
     buildings: Entities<Building, { groups::BUILDING }>,
     enemies: Entities<Enemy, { groups::ENEMY }>,
     hit_effects: Entities<HitEffect, { groups::HIT_EFFECT }>,
+    death_ball_size: u8,
 }
 
 impl Combat {
@@ -55,18 +56,18 @@ impl Combat {
             enemies: data.enemies,
             death_ball,
             hit_effects,
+            death_ball_size: 0,
         })
     }
 }
 
 impl Combat {
-    fn get_death_ball_size(&self) -> u8 {
-        let size = self
+    fn update_death_ball_size(&mut self) {
+        self.death_ball_size = self
             .animals
             .into_iter()
             .filter(|a| a.is_affected_by_death_ball)
-            .count();
-        size as u8
+            .count() as u8;
     }
 }
 
@@ -136,9 +137,9 @@ impl Scene for Combat {
             let animal = &mut self.animals[idx2];
             animal.is_affected_by_death_ball = true;
 
+            self.update_death_ball_size();
             self.objective
-                .on_update_death_ball_count(self.get_death_ball_size());
-
+                .on_update_death_ball_count(self.death_ball_size);
             return;
         }
 
@@ -201,15 +202,47 @@ impl Scene for Combat {
             res.physics
                 .apply_impulse(animal_handle, direction * enemy.attack_impulse);
 
+            self.update_death_ball_size();
             self.objective
-                .on_update_death_ball_count(self.get_death_ball_size());
+                .on_update_death_ball_count(self.death_ball_size);
         }
     }
 
-    fn update_ui(&mut self, _res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange {
-        egui::Window::new("Objective").show(ctx, |ui| {
-            ui.label(self.objective.progress_string());
-        });
+    fn update_ui(&mut self, res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange {
+        use egui::*;
+
+        Window::new("score")
+            .title_bar(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_TOP, (0., 8.))
+            .show(ctx, |ui| {
+                ui.label(format!("Score: {}", res.score as f32 / 100.));
+            });
+
+        Window::new("objective")
+            .title_bar(false)
+            .resizable(false)
+            .anchor(egui::Align2::LEFT_BOTTOM, (8., -8.))
+            .show(ctx, |ui| {
+                ui.columns(2, |cols| {
+                    cols[0].label("Objective:");
+                    cols[0].label("Current:");
+
+                    cols[1].add(Label::new(self.objective.to_string()).wrap(false));
+                    cols[1].label(self.objective.current());
+                });
+            });
+
+        Window::new("size")
+            .title_bar(false)
+            .resizable(false)
+            .anchor(egui::Align2::RIGHT_BOTTOM, (-8., -8.))
+            .show(ctx, |ui| {
+                ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                    ui.label("Deathball Count");
+                    ui.label(self.death_ball_size);
+                });
+            });
 
         SceneChange::None
     }

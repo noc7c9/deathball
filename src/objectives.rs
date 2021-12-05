@@ -1,6 +1,6 @@
 pub struct Objective {
     kind: Kind,
-    amount: u8,
+    current: u8,
     target: u8,
 }
 
@@ -15,14 +15,14 @@ enum Kind {
 impl Objective {
     fn new(kind: Kind, target: u8) -> Self {
         Self {
-            amount: 0,
+            current: 0,
             target,
             kind,
         }
     }
 
     pub fn none() -> Self {
-        Self::new(Kind::None, 0)
+        Self::new(Kind::None, 1)
     }
 
     pub fn save_animals(target: u8) -> Self {
@@ -42,35 +42,44 @@ impl Objective {
     }
 
     pub fn is_complete(&self) -> bool {
-        self.amount >= self.target
+        self.current >= self.target
     }
 
-    pub fn on_update_death_ball_count(&mut self, amount: u8) {
+    pub fn on_update_death_ball_count(&mut self, current: u8) {
         if let Kind::SaveAnimals { .. } = self.kind {
-            self.amount = amount;
+            self.current = current;
         }
     }
 
     pub fn on_kill_enemy(&mut self) {
         if let Kind::KillEnemies { .. } | Kind::KillBosses { .. } = self.kind {
-            self.amount += 1;
+            self.current += 1;
         }
     }
 
     pub fn on_destroy_building(&mut self) {
         if let Kind::DestroyBuildings { .. } = self.kind {
-            self.amount += 1;
+            self.current += 1;
         }
     }
 
-    pub fn progress_string(&self) -> String {
-        let prefix = match self.kind {
+    pub fn current(&self) -> u8 {
+        self.current
+    }
+
+    pub fn to_string(&self) -> String {
+        let (prefix, suffix_singular, suffix_plural) = match self.kind {
             Kind::None => return "None".to_string(),
-            Kind::SaveAnimals => "Save Animals",
-            Kind::DestroyBuildings => "Destroy Buildings",
-            Kind::KillEnemies => "Kill Enemies",
-            Kind::KillBosses => "Kill Bosses",
+            Kind::SaveAnimals => ("Save", "Animal", "Animals"),
+            Kind::DestroyBuildings => ("Destroy", "Building", "Buildings"),
+            Kind::KillEnemies => ("Kill", "Enemy", "Enemies"),
+            Kind::KillBosses => ("Kill", "Boss", "Bosses"),
         };
-        format!("{}: {} of {}", prefix, self.amount, self.target)
+        let suffix = if self.target == 1 {
+            suffix_singular
+        } else {
+            suffix_plural
+        };
+        format!("{} {} {}", prefix, self.target, suffix)
     }
 }
