@@ -1706,6 +1706,7 @@ pub fn init(res: &mut Resources) -> LevelData {
     enemies.push(|idx| Enemy::new(Demon, idx, res, vec2(1792.0, -319.0)));
 
     LevelData {
+        max_score: 60000,
         objective,
         background,
         animals,

@@ -27,6 +27,7 @@ impl Level {
 }
 
 pub struct LevelData {
+    pub max_score: u32,
     pub objective: Objective,
     pub background: Background,
     pub animals: Entities<Animal, { groups::ANIMAL }>,

@@ -69,6 +69,7 @@ pub fn init(res: &mut Resources) -> LevelData {
     }
 
     LevelData {
+        max_score: 0,
         objective,
         background,
         animals,

@@ -157,11 +157,12 @@ function main() {
     // log(`Updated ${new Date().toISOString()}`);
 
     {
-        const { objective, objective_count } = data.find(
+        const { objective, objective_count, score } = data.find(
             (datum) => datum.objective != null,
         );
         const fn = OBJECTIVES_MAP[objective];
         level.objective = `${fn}(${objective_count})`;
+        level.maxScore = (score ?? 300) * 100;
     }
 
     /***
@@ -353,6 +354,7 @@ function log(...args) {
 }
 
 function printLevel({
+    maxScore,
     objective,
     bgColor,
     bgSize,
@@ -421,6 +423,7 @@ pub fn init(res: &mut Resources) -> LevelData {
         .join('\n    ')}
 
     LevelData {
+        max_score: ${maxScore},
         objective,
         background,
         animals,

@@ -38,6 +38,7 @@ pub struct Combat {
     enemies: Entities<Enemy, { groups::ENEMY }>,
     hit_effects: Entities<HitEffect, { groups::HIT_EFFECT }>,
     death_ball_size: u8,
+    score: f32,
 }
 
 impl Combat {
@@ -57,6 +58,7 @@ impl Combat {
             death_ball,
             hit_effects,
             death_ball_size: 0,
+            score: data.max_score as f32,
         })
     }
 }
@@ -119,9 +121,14 @@ impl Scene for Combat {
             };
         }
 
+        if !self.objective.is_complete() {
+            self.score = (self.score - res.delta * 100.).max(0.);
+        }
+
         // Handle objective completion
         if self.objective.is_complete() && res.input.is_spacebar_down() {
             res.beaten.insert(self.level);
+            res.score += self.score.floor() as u32;
             return SceneChange::Change(scenes::LevelSelect::boxed(res));
         }
 
@@ -208,7 +215,7 @@ impl Scene for Combat {
         }
     }
 
-    fn update_ui(&mut self, res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange {
+    fn update_ui(&mut self, _res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange {
         use egui::*;
 
         Window::new("score")
@@ -216,7 +223,16 @@ impl Scene for Combat {
             .resizable(false)
             .anchor(egui::Align2::CENTER_TOP, (0., 8.))
             .show(ctx, |ui| {
-                ui.label(format!("Score: {}", res.score as f32 / 100.));
+                Resize::default().fixed_size((300., 0.)).show(ui, |ui| {
+                    ui.columns(2, |cols| {
+                        cols[0].with_layout(Layout::top_down(Align::Center), |ui| {
+                            ui.label("Score:");
+                        });
+                        cols[1].with_layout(Layout::top_down(Align::Center), |ui| {
+                            ui.label(format!("{:.2}", self.score as f32 / 100.));
+                        });
+                    });
+                });
             });
 
         if self.objective.is_complete() {
