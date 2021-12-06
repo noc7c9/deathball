@@ -31,8 +31,10 @@ impl Health {
     }
 
     pub fn damage(&mut self, amount: u16) {
-        self.timer = FADE_TIME;
-        self.health = self.health.saturating_sub(amount);
+        if amount > 0 {
+            self.timer = FADE_TIME;
+            self.health = self.health.saturating_sub(amount);
+        }
     }
 
     pub fn update(&mut self, delta: f32) {
