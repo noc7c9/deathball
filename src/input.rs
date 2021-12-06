@@ -37,6 +37,10 @@ impl Input {
         }
     }
 
+    pub fn is_spacebar_down(&self) -> bool {
+        is_key_down(KeyCode::Space)
+    }
+
     pub fn get_wasd_axes(&self) -> Vec2 {
         let mut delta = vec2(0., 0.);
         if is_key_down(KeyCode::W) {

@@ -120,7 +120,7 @@ impl Scene for Combat {
         }
 
         // Handle objective completion
-        if self.objective.is_complete() {
+        if self.objective.is_complete() && res.input.is_spacebar_down() {
             res.beaten.insert(self.level);
             return SceneChange::Change(scenes::LevelSelect::boxed(res));
         }
@@ -218,6 +218,17 @@ impl Scene for Combat {
             .show(ctx, |ui| {
                 ui.label(format!("Score: {}", res.score as f32 / 100.));
             });
+
+        if self.objective.is_complete() {
+            Area::new("objective complete")
+                .anchor(egui::Align2::CENTER_TOP, (0., 64.))
+                .show(ctx, |ui| {
+                    ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                        ui.label("You Win!");
+                        ui.label("Press Spacebar to go to next screen.");
+                    });
+                });
+        }
 
         Window::new("objective")
             .title_bar(false)
