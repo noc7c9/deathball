@@ -35,8 +35,6 @@ jobs:
                     ./assets \
                     ./target/wasm32-unknown-unknown/release/deathball.wasm \
                     ./dist
-                  curl https://raw.githubusercontent.com/not-fl3/miniquad/v0.3.0-alpha.37/native/sapp-wasm/js/gl.js \
-                      --output ./dist/gl.js
 
             - name: Deploy
               uses: JamesIves/github-pages-deploy-action@4.1.7

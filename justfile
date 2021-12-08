@@ -33,5 +33,3 @@ build-wasm:
         ./assets \
         ./target/wasm32-unknown-unknown/release/deathball.wasm \
         ./target/build-wasm
-    curl https://raw.githubusercontent.com/not-fl3/miniquad/v0.3.0-alpha.37/native/sapp-wasm/js/gl.js \
-        --output ./target/build-wasm/gl.js
