@@ -17,13 +17,13 @@ impl Assets {
     pub async fn load() -> Self {
         let ((icon, animals, buildings), (enemies, props, font)) = {
             let a = futures::future::join3(
-                load_texture("./assets/icon.png"),
-                load_texture("./assets/animals.png"),
-                load_texture("./assets/buildings.png"),
+                load_texture("./assets/img/icon.png"),
+                load_texture("./assets/img/animals.png"),
+                load_texture("./assets/img/buildings.png"),
             );
             let b = futures::future::join3(
-                load_texture("./assets/enemies.png"),
-                load_texture("./assets/props.png"),
+                load_texture("./assets/img/enemies.png"),
+                load_texture("./assets/img/props.png"),
                 load_file("./assets/kenney-future.ttf"),
             );
             futures::future::join(a, b)
