@@ -28,6 +28,7 @@ mod hit_effect;
 mod objectives;
 
 mod debug {
+    pub const AUTO_COMPLETE_OBJECTIVES: bool = false;
     pub const DRAW_COLLIDERS: bool = false;
     pub const ENABLE_LEVEL_SELECT: bool = false;
     pub const SHOW_FPS: bool = false;

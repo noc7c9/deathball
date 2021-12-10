@@ -42,7 +42,7 @@ impl Objective {
     }
 
     pub fn is_complete(&self) -> bool {
-        self.current >= self.target
+        crate::debug::AUTO_COMPLETE_OBJECTIVES || self.current >= self.target
     }
 
     pub fn on_update_death_ball_count(&mut self, current: u8) {
