@@ -64,7 +64,7 @@ pub fn window_config() -> Conf {
 
 #[macroquad::main(window_config)]
 async fn main() {
-    let mut assets = Assets::load().await;
+    let mut assets = loading_screen().await;
     let mut res = Resources {
         audio: AudioManager::new(&mut assets),
         assets,
@@ -153,5 +153,47 @@ async fn main() {
         }
 
         next_frame().await
+    }
+}
+
+async fn loading_screen() -> Assets {
+    egui_macroquad::cfg(|ctx| {
+        use egui::*;
+
+        let mut fonts = FontDefinitions::default();
+        fonts
+            .family_and_size
+            .insert(TextStyle::Heading, (FontFamily::Proportional, 40.));
+        ctx.set_fonts(fonts);
+    });
+
+    let mut loader = Assets::loader();
+
+    loop {
+        match loader.progress().await {
+            assets::Progress::InProgress(percent) => {
+                egui_macroquad::ui(|ctx| {
+                    use egui::*;
+                    Area::new("loading")
+                        .anchor(Align2::CENTER_CENTER, (0., 0.))
+                        .show(ctx, |ui| {
+                            ui.with_layout(
+                                Layout::centered_and_justified(Direction::TopDown),
+                                |ui| {
+                                    ui.add(
+                                        Label::new(format!("Loading: {:.1}%", percent * 100.))
+                                            .text_style(TextStyle::Heading),
+                                    );
+                                },
+                            );
+                        });
+                });
+
+                egui_macroquad::draw();
+            }
+            assets::Progress::Complete(assets) => return assets,
+        }
+
+        next_frame().await;
     }
 }
