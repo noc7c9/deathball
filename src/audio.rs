@@ -107,6 +107,10 @@ impl BackgroundMusic {
     }
 
     pub fn play(&mut self, track: bgm::Track) {
+        if crate::debug::DISABLE_BGM {
+            return;
+        }
+
         self.stop();
 
         let sound = match track {
@@ -147,6 +151,10 @@ impl SoundEffects {
     }
 
     fn play(&mut self) {
+        if crate::debug::DISABLE_SFX {
+            return;
+        }
+
         self.playing
             .retain(|handle| handle.state() != InstanceState::Stopped);
 

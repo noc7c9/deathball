@@ -29,6 +29,8 @@ mod objectives;
 
 mod debug {
     pub const AUTO_COMPLETE_OBJECTIVES: bool = false;
+    pub const DISABLE_BGM: bool = true;
+    pub const DISABLE_SFX: bool = true;
     pub const DRAW_COLLIDERS: bool = false;
     pub const ENABLE_LEVEL_SELECT: bool = false;
     pub const SHOW_FPS: bool = false;

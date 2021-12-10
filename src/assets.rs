@@ -128,8 +128,20 @@ impl AssetsLoader {
                 self.explode = Some([Sound::new(explode1.unwrap()), Sound::new(explode2.unwrap())]);
             }
             3 => {
-                let file = load_file("./assets/music/giant-horse-deathball.ogg").await;
-                self.giant_horse_deathball = Some(Sound::new(file.unwrap()));
+                // skip loading bgm if disabled
+                if crate::debug::DISABLE_BGM {
+                    // we still need to load something
+                    let file = load_file("./assets/sfx/smack1.ogg").await.unwrap();
+                    self.giant_horse_deathball = Some(Sound::new(file.clone()));
+                    self.meadow_meadow = Some(Sound::new(file.clone()));
+                    self.send_it = Some(Sound::new(file.clone()));
+                    self.space = Some(Sound::new(file.clone()));
+                    self.take_me_home = Some(Sound::new(file));
+                    self.progress = 7;
+                } else {
+                    let file = load_file("./assets/music/giant-horse-deathball.ogg").await;
+                    self.giant_horse_deathball = Some(Sound::new(file.unwrap()));
+                }
             }
             4 => {
                 let file = load_file("./assets/music/meadow-meadow.ogg").await;
