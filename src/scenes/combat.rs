@@ -19,8 +19,6 @@ use crate::{
 
 use super::{Scene, SceneChange};
 
-const DRAW_COLLIDERS: bool = false;
-
 const PAN_SPEED: f32 = 15.;
 
 const INITIAL_ZOOM: f32 = 0.0015;
@@ -305,7 +303,7 @@ impl Scene for Combat {
             building.draw(res);
         }
 
-        if DRAW_COLLIDERS {
+        if crate::debug::DRAW_COLLIDERS {
             res.physics.draw_colliders();
         }
 

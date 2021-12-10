@@ -4,7 +4,6 @@ use crate::{audio::bgm, levels, scenes, Resources};
 
 use super::{Scene, SceneChange};
 
-const ENABLE_LEVEL_SELECT: bool = false;
 const BACKGROUND_COLOR: Color = Color::new(0.243, 0.133, 0.133, 1.0);
 
 pub struct MainMenu;
@@ -66,7 +65,7 @@ impl Scene for MainMenu {
                 })
             });
 
-        if ENABLE_LEVEL_SELECT {
+        if crate::debug::ENABLE_LEVEL_SELECT {
             let mut level_to_load = None;
             Window::new("Load Level")
                 .resizable(false)

@@ -27,7 +27,12 @@ mod health;
 mod hit_effect;
 mod objectives;
 
-const SHOW_FPS: bool = false;
+mod debug {
+    pub const DRAW_COLLIDERS: bool = false;
+    pub const ENABLE_LEVEL_SELECT: bool = false;
+    pub const SHOW_FPS: bool = false;
+}
+
 const FPS_SMOOTHING: f32 = 0.9;
 
 pub mod groups {
@@ -157,7 +162,7 @@ async fn main() {
             }
         }
 
-        if SHOW_FPS {
+        if crate::debug::SHOW_FPS {
             fps = (fps * FPS_SMOOTHING) + ((1. / res.delta) * (1. - FPS_SMOOTHING));
             let text = format!("FPS: {:>6.2}", fps);
             draw_text(&text, screen_width() - 86., 16., 16., WHITE);
