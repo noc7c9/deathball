@@ -27,6 +27,9 @@ mod health;
 mod hit_effect;
 mod objectives;
 
+const SHOW_FPS: bool = false;
+const FPS_SMOOTHING: f32 = 0.9;
+
 pub mod groups {
     pub const DEATH_BALL: super::GenerationalIndex = super::GenerationalIndex::single(0);
 
@@ -76,6 +79,8 @@ async fn main() {
         beaten: Default::default(),
     };
     let mut physics_events: Vec<PhysicsEvent> = Vec::new();
+
+    let mut fps = 0.;
 
     let mut scene: Box<dyn Scene> = scenes::MainMenu::boxed();
     let mut new_scene;
@@ -150,6 +155,12 @@ async fn main() {
                 scene = new_scene;
                 scene.on_enter(&mut res);
             }
+        }
+
+        if SHOW_FPS {
+            fps = (fps * FPS_SMOOTHING) + ((1. / res.delta) * (1. - FPS_SMOOTHING));
+            let text = format!("FPS: {:>6.2}", fps);
+            draw_text(&text, screen_width() - 86., 16., 16., WHITE);
         }
 
         next_frame().await
