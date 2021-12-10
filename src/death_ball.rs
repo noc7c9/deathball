@@ -5,6 +5,7 @@ use crate::{camera::Camera, groups, physics, spritesheet::Sprite, Resources};
 pub struct DeathBall {
     handle: physics::SensorHandle,
     sprite: Sprite,
+    alpha: f32,
 }
 
 impl DeathBall {
@@ -16,6 +17,7 @@ impl DeathBall {
         DeathBall {
             handle,
             sprite: res.assets.animals.sprite(vec2(7., 5.)),
+            alpha: 1.,
         }
     }
 
@@ -24,14 +26,18 @@ impl DeathBall {
     }
 
     pub fn update(&mut self, res: &mut Resources, camera: &Camera) {
+        self.alpha *= 0.75;
+
         if let Some(position) = res.input.get_mouse_left_button_down() {
             let position = camera.screen_to_world(position);
             res.physics.set_position(self.handle, position);
+
+            self.alpha = 1.0;
         }
     }
 
     pub fn draw(&self, res: &Resources) {
         let position = res.physics.get_position(self.handle);
-        self.sprite.draw(position, 0.);
+        self.sprite.draw_alpha(position, 0., self.alpha);
     }
 }
