@@ -13,6 +13,7 @@ pub struct Assets {
 
     // sfx
     pub smack: [Vec<u8>; 3],
+    pub explode: [Vec<u8>; 2],
 
     // misc
     pub icon: Texture2D,
@@ -21,7 +22,12 @@ pub struct Assets {
 
 impl Assets {
     pub async fn load() -> Self {
-        let ((icon, animals, buildings), (enemies, props, font), (smack1, smack2, smack3)) = {
+        let (
+            (icon, animals, buildings),
+            (enemies, props, font),
+            (smack1, smack2, smack3),
+            (explode1, explode2),
+        ) = {
             let a = futures::future::join3(
                 load_texture("./assets/img/icon.png"),
                 load_texture("./assets/img/animals.png"),
@@ -37,7 +43,11 @@ impl Assets {
                 load_file("./assets/sfx/smack2.ogg"),
                 load_file("./assets/sfx/smack3.ogg"),
             );
-            futures::future::join3(a, b, c)
+            let d = futures::future::join(
+                load_file("./assets/sfx/explode1.ogg"),
+                load_file("./assets/sfx/explode2.ogg"),
+            );
+            futures::future::join4(a, b, c, d)
         }
         .await;
         Assets {
@@ -49,6 +59,7 @@ impl Assets {
 
             // sfx
             smack: [smack1.unwrap(), smack2.unwrap(), smack3.unwrap()],
+            explode: [explode1.unwrap(), explode2.unwrap()],
 
             // misc
             icon: icon.unwrap(),

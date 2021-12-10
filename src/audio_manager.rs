@@ -8,25 +8,33 @@ use macroquad::prelude::*;
 use super::Assets;
 
 const MAX_HIT_SFX_PLAYING: usize = 4;
+const MAX_KILLED_SFX_PLAYING: usize = 6;
 
 pub struct AudioManager {
     _manager: KiraAudioManager,
     hit_sfx: SoundEffects,
+    killed_sfx: SoundEffects,
 }
 
 impl AudioManager {
     pub fn new(assets: &Assets) -> Self {
         let mut manager = KiraAudioManager::new(Default::default()).unwrap();
         let hit_sfx = SoundEffects::new(&mut manager, &assets.smack, MAX_HIT_SFX_PLAYING);
+        let killed_sfx = SoundEffects::new(&mut manager, &assets.explode, MAX_KILLED_SFX_PLAYING);
         Self {
             // keep ref to make sure manager isn't dropped
             _manager: manager,
             hit_sfx,
+            killed_sfx,
         }
     }
 
     pub fn play_hit_sfx(&mut self) {
         self.hit_sfx.play();
+    }
+
+    pub fn play_killed_sfx(&mut self) {
+        self.killed_sfx.play();
     }
 }
 
