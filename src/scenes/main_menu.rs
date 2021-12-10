@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{levels, scenes, Resources};
+use crate::{audio::bgm, levels, scenes, Resources};
 
 use super::{Scene, SceneChange};
 
@@ -16,6 +16,10 @@ impl MainMenu {
 }
 
 impl Scene for MainMenu {
+    fn on_enter(&mut self, res: &mut Resources) {
+        res.audio.bgm.play(bgm::GiantHorseDeathball);
+    }
+
     fn update(&mut self, _res: &mut Resources) -> SceneChange {
         SceneChange::None
     }

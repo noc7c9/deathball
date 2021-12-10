@@ -1,5 +1,5 @@
 use crate::{
-    animals::Animal, background::Background, buildings::Building, enemies::Enemy,
+    animals::Animal, audio::bgm, background::Background, buildings::Building, enemies::Enemy,
     entities::Entities, groups, objectives::Objective, Resources,
 };
 
@@ -27,6 +27,7 @@ impl Level {
 }
 
 pub struct LevelData {
+    pub bgm: bgm::Track,
     pub max_score: u32,
     pub objective: Objective,
     pub background: Background,

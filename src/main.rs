@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 
 mod assets;
-mod audio_manager;
+mod audio;
 mod camera;
 mod entities;
 mod input;
@@ -11,7 +11,7 @@ mod scenes;
 mod spritesheet;
 
 use assets::Assets;
-use audio_manager::AudioManager;
+use audio::AudioManager;
 use entities::GenerationalIndex;
 use input::Input;
 use levels::Level;
@@ -116,6 +116,8 @@ async fn main() {
         ctx.set_style(style);
     });
 
+    scene.on_enter(&mut res);
+
     loop {
         res.delta = get_frame_time();
 
@@ -146,6 +148,7 @@ async fn main() {
             SceneChange::Quit => break,
             SceneChange::Change(new_scene) => {
                 scene = new_scene;
+                scene.on_enter(&mut res);
             }
         }
 

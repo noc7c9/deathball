@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 
 use crate::{
     animals::{Animal, Variant::*},
+    audio::bgm,
     background::{Background, Prop::*},
     buildings::{Building, Variant::*},
     enemies::{Enemy, Variant::*},
@@ -1211,6 +1212,7 @@ pub fn init(res: &mut Resources) -> LevelData {
     enemies.push(|idx| Enemy::new(Farmer, idx, res, vec2(2030.0, 83.0)));
 
     LevelData {
+        bgm: bgm::MeadowMeadow,
         max_score: 30000,
         objective,
         background,

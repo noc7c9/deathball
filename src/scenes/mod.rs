@@ -1,6 +1,8 @@
 use crate::{physics::PhysicsEvent, Resources};
 
 pub trait Scene {
+    fn on_enter(&mut self, _res: &mut Resources) {}
+
     fn update(&mut self, res: &mut Resources) -> SceneChange;
 
     fn handle_physics_event(&mut self, _res: &mut Resources, _event: PhysicsEvent) {}

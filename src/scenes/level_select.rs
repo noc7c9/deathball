@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{levels, scenes, spritesheet::Sprite, Resources};
+use crate::{audio::bgm, levels, scenes, spritesheet::Sprite, Resources};
 
 use super::{Scene, SceneChange};
 
@@ -45,6 +45,14 @@ impl LevelSelect {
 }
 
 impl Scene for LevelSelect {
+    fn on_enter(&mut self, res: &mut Resources) {
+        if res.beaten.contains(&levels::Final) {
+            res.audio.bgm.play(bgm::TakeMeHome);
+        } else {
+            res.audio.bgm.play(bgm::Space);
+        }
+    }
+
     fn update(&mut self, res: &mut Resources) -> SceneChange {
         self.wanderer.update(res);
 

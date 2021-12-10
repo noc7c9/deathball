@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 
 use crate::{
     animals::Animal,
+    audio::bgm,
     background::Background,
     buildings::Building,
     camera::Camera,
@@ -30,6 +31,7 @@ const MAX_ZOOM: f32 = 0.005;
 pub struct Combat {
     camera: Camera,
     level: Level,
+    bgm: bgm::Track,
     objective: Objective,
     background: Background,
     death_ball: DeathBall,
@@ -50,6 +52,7 @@ impl Combat {
         Box::new(Combat {
             camera: Camera::new(Vec2::ZERO, INITIAL_ZOOM),
             level,
+            bgm: data.bgm,
             objective: data.objective,
             background: data.background,
             animals: data.animals,
@@ -74,6 +77,10 @@ impl Combat {
 }
 
 impl Scene for Combat {
+    fn on_enter(&mut self, res: &mut Resources) {
+        res.audio.bgm.play(self.bgm);
+    }
+
     fn update(&mut self, res: &mut Resources) -> SceneChange {
         // Update camera
         {

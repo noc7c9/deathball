@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 
 use crate::{
     animals::Animal,
+    audio::bgm,
     background::{Background, Prop},
     buildings::Building,
     enemies::Enemy,
@@ -69,6 +70,7 @@ pub fn init(res: &mut Resources) -> LevelData {
     }
 
     LevelData {
+        bgm: bgm::MeadowMeadow,
         max_score: 0,
         objective,
         background,
