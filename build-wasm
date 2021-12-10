@@ -10,11 +10,18 @@ rm -rf ./dist
 # based on https://github.com/not-fl3/macroquad/issues/212#issuecomment-835276147
 wasm-bindgen ./target/wasm32-unknown-unknown/release/deathball.wasm \
     --out-dir ./dist --target web --no-typescript
-sed -i '' "s/import \* as __wbg_star0 from 'env';//" \
-    ./dist/deathball.js
-sed -i '' "s/let wasm;/let wasm; export const set_wasm = (w) => wasm = w;/" \
-    ./dist/deathball.js
-sed -i '' "s/imports\['env'\] = __wbg_star0;/return imports.wbg\;/" \
-    ./dist/deathball.js
+
+replacments=(
+    "s/import \* as __wbg_star0 from 'env';//"
+    "s/let wasm;/let wasm; export const set_wasm = (w) => wasm = w;/"
+    "s/imports\['env'\] = __wbg_star0;/return imports.wbg\;/"
+)
+for replacment in "${replacments[@]}"; do
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "$replacment" ./dist/deathball.js
+    else
+        sed -i "$replacment" ./dist/deathball.js
+    fi
+done
 
 cp -r ./src/index.html ./assets ./dist
