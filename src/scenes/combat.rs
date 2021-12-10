@@ -155,13 +155,13 @@ impl Scene for Combat {
             let animal = &mut self.animals[idx1];
             let building = &mut self.buildings[idx2];
 
-            let just_destroyed = building.damage(animal.damage);
-            if just_destroyed {
-                self.objective.on_destroy_building();
-            }
-
-            // spawn hit effects on contact
             if let PhysicsEventKind::ContactStart { point } = event.kind {
+                let just_destroyed = building.damage(animal.damage);
+                if just_destroyed {
+                    self.objective.on_destroy_building();
+                }
+
+                // spawn hit effects on contact
                 self.hit_effects.push(|idx| HitEffect::new(idx, point));
 
                 res.audio.play_hit_sfx();
