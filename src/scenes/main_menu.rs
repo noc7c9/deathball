@@ -60,7 +60,7 @@ impl Scene for MainMenu {
                         scene_change =
                             SceneChange::Change(scenes::Combat::boxed(res, levels::Tutorial));
                     }
-                    if ui.button("Quit").clicked() {
+                    if !cfg!(target_arch = "wasm32") && ui.button("Quit").clicked() {
                         scene_change = SceneChange::Quit;
                     }
                 })
