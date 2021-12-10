@@ -5,7 +5,7 @@ use kira::{
     },
     manager::AudioManager as KiraAudioManager,
     parameter::tween::Tween,
-    sound::{handle::SoundHandle, Sound},
+    sound::{handle::SoundHandle, Sound as KiraSound},
 };
 use macroquad::prelude::*;
 
@@ -23,11 +23,12 @@ pub struct AudioManager {
 }
 
 impl AudioManager {
-    pub fn new(assets: &Assets) -> Self {
+    pub fn new(assets: &mut Assets) -> Self {
         let mut manager = KiraAudioManager::new(Default::default()).unwrap();
         let bgm = BackgroundMusic::new(&mut manager, assets);
-        let hit_sfx = SoundEffects::new(&mut manager, &assets.smack, MAX_HIT_SFX_PLAYING);
-        let killed_sfx = SoundEffects::new(&mut manager, &assets.explode, MAX_KILLED_SFX_PLAYING);
+        let hit_sfx = SoundEffects::new(&mut manager, &mut assets.smack, MAX_HIT_SFX_PLAYING);
+        let killed_sfx =
+            SoundEffects::new(&mut manager, &mut assets.explode, MAX_KILLED_SFX_PLAYING);
         Self {
             // keep ref to make sure manager isn't dropped
             _manager: manager,
@@ -46,10 +47,19 @@ impl AudioManager {
     }
 }
 
-fn add_sound(manager: &mut KiraAudioManager, bytes: &[u8]) -> SoundHandle {
-    let cursor = std::io::Cursor::new(bytes);
-    let sound = Sound::from_ogg_reader(cursor, Default::default()).unwrap();
-    manager.add_sound(sound).unwrap()
+// used by the assets module to decode and store sound data before it's needed by this module
+pub struct Sound(Option<KiraSound>);
+
+impl Sound {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        let cursor = std::io::Cursor::new(bytes);
+        let sound = KiraSound::from_ogg_reader(cursor, Default::default()).unwrap();
+        Sound(Some(sound))
+    }
+
+    fn add(&mut self, manager: &mut KiraAudioManager) -> SoundHandle {
+        manager.add_sound(self.0.take().unwrap()).unwrap()
+    }
 }
 
 pub mod bgm {
@@ -75,18 +85,18 @@ pub struct BackgroundMusic {
 }
 
 impl BackgroundMusic {
-    fn new(manager: &mut KiraAudioManager, assets: &Assets) -> Self {
+    fn new(manager: &mut KiraAudioManager, assets: &mut Assets) -> Self {
         Self {
-            giant_horse_deathball: add_sound(manager, &assets.giant_horse_deathball),
-            meadow_meadow: add_sound(manager, &assets.meadow_meadow),
-            send_it: add_sound(manager, &assets.send_it),
-            space: add_sound(manager, &assets.space),
-            take_me_home: add_sound(manager, &assets.take_me_home),
+            giant_horse_deathball: assets.giant_horse_deathball.add(manager),
+            meadow_meadow: assets.meadow_meadow.add(manager),
+            send_it: assets.send_it.add(manager),
+            space: assets.space.add(manager),
+            take_me_home: assets.take_me_home.add(manager),
             playing: None,
         }
     }
 
-    pub fn stop(&mut self) {
+    fn stop(&mut self) {
         if let Some(mut instance) = self.playing.take() {
             instance
                 .stop(StopInstanceSettings {
@@ -127,11 +137,8 @@ struct SoundEffects {
 }
 
 impl SoundEffects {
-    fn new(manager: &mut KiraAudioManager, sound_bytes: &[Vec<u8>], max_playing: usize) -> Self {
-        let sounds = sound_bytes
-            .iter()
-            .map(|bytes| add_sound(manager, bytes))
-            .collect();
+    fn new(manager: &mut KiraAudioManager, sounds: &mut [Sound], max_playing: usize) -> Self {
+        let sounds = sounds.iter_mut().map(|sound| sound.add(manager)).collect();
 
         Self {
             sounds,

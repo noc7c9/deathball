@@ -64,9 +64,9 @@ pub fn window_config() -> Conf {
 
 #[macroquad::main(window_config)]
 async fn main() {
-    let assets = Assets::load().await;
+    let mut assets = Assets::load().await;
     let mut res = Resources {
-        audio: AudioManager::new(&assets),
+        audio: AudioManager::new(&mut assets),
         assets,
         input: Input::new(),
         physics: Physics::new(),
