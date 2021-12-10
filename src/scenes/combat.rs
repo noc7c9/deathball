@@ -163,6 +163,8 @@ impl Scene for Combat {
             // spawn hit effects on contact
             if let PhysicsEventKind::ContactStart { point } = event.kind {
                 self.hit_effects.push(|idx| HitEffect::new(idx, point));
+
+                res.audio.play_hit_sfx();
             }
 
             return;
@@ -187,6 +189,8 @@ impl Scene for Combat {
 
                     // spawn hit effects on contact
                     self.hit_effects.push(|idx| HitEffect::new(idx, point));
+
+                    res.audio.play_hit_sfx();
                 }
                 _ => {}
             }

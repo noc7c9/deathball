@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 
 mod assets;
+mod audio_manager;
 mod camera;
 mod entities;
 mod input;
@@ -10,6 +11,7 @@ mod scenes;
 mod spritesheet;
 
 use assets::Assets;
+use audio_manager::AudioManager;
 use entities::GenerationalIndex;
 use input::Input;
 use levels::Level;
@@ -40,6 +42,7 @@ pub mod groups {
 
 pub struct Resources {
     assets: Assets,
+    audio: AudioManager,
     input: Input,
     physics: Physics,
     deleted: Vec<GenerationalIndex>,
@@ -61,8 +64,10 @@ pub fn window_config() -> Conf {
 
 #[macroquad::main(window_config)]
 async fn main() {
+    let assets = Assets::load().await;
     let mut res = Resources {
-        assets: Assets::load().await,
+        audio: AudioManager::new(&assets),
+        assets,
         input: Input::new(),
         physics: Physics::new(),
         deleted: Vec::new(),

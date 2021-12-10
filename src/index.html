@@ -21,7 +21,9 @@
     <body>
         <canvas id="glcanvas" tabindex="1"></canvas>
         <script src="assets/mq_js_bundle.js"></script>
-        <script>
+        <script type="module">
+            import init, { set_wasm } from './deathball.js';
+
             document.addEventListener('keydown', onKeyDown, false);
 
             function onKeyDown(evt) {
@@ -41,7 +43,16 @@
                 false,
             );
 
-            load('deathball.wasm');
+            (async () => {
+                const wbg = await init();
+                miniquad_add_plugin({
+                    register_plugin: (a) => (a.wbg = wbg),
+                    on_init: () => set_wasm(wasm_exports),
+                    version: '0.0.1',
+                    name: 'wbg',
+                });
+                load('deathball_bg.wasm');
+            })();
         </script>
     </body>
 </html>

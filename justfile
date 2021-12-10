@@ -26,10 +26,4 @@ cargo +ARGS='':
     cargo {{ARGS}}
 
 build-wasm:
-    cargo build --release --target wasm32-unknown-unknown
-    mkdir -p ./target/build-wasm
-    cp -r \
-        ./src/index.html \
-        ./assets \
-        ./target/wasm32-unknown-unknown/release/deathball.wasm \
-        ./target/build-wasm
+    ./build-wasm
