@@ -427,6 +427,7 @@ dependencies = [
  "macroquad",
  "nalgebra",
  "rapier2d",
+ "wasm-bindgen",
 ]
 
 [[package]]

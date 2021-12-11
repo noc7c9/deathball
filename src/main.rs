@@ -175,6 +175,7 @@ async fn main() {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 async fn loading_screen() -> Assets {
     egui_macroquad::cfg(|ctx| {
         use egui::*;
@@ -191,6 +192,8 @@ async fn loading_screen() -> Assets {
     loop {
         match loader.progress().await {
             assets::Progress::InProgress(percent) => {
+                let progress = format!("Loading: {:.1}%", percent * 100.);
+                info!("{}", progress);
                 egui_macroquad::ui(|ctx| {
                     use egui::*;
                     Area::new("loading")
@@ -199,10 +202,7 @@ async fn loading_screen() -> Assets {
                             ui.with_layout(
                                 Layout::centered_and_justified(Direction::TopDown),
                                 |ui| {
-                                    ui.add(
-                                        Label::new(format!("Loading: {:.1}%", percent * 100.))
-                                            .text_style(TextStyle::Heading),
-                                    );
+                                    ui.add(Label::new(progress).text_style(TextStyle::Heading));
                                 },
                             );
                         });
@@ -215,4 +215,32 @@ async fn loading_screen() -> Assets {
 
         next_frame().await;
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn loading_screen() -> Assets {
+    #[wasm_bindgen::prelude::wasm_bindgen]
+    extern "C" {
+        fn update_loading_msg(percent: f32, progress: &str);
+        fn can_start() -> bool;
+    }
+
+    let mut loader = Assets::loader();
+
+    let assets = loop {
+        match loader.progress().await {
+            assets::Progress::InProgress(percent) => {
+                let progress = format!("Loading: {:.1}%", percent * 100.);
+                info!("{}", progress);
+                update_loading_msg(percent, &progress);
+            }
+            assets::Progress::Complete(assets) => break assets,
+        }
+    };
+
+    while !can_start() {
+        next_frame().await;
+    }
+
+    assets
 }
