@@ -9,7 +9,12 @@ use rapier2d::prelude::*;
 
 use crate::entities::GenerationalIndex;
 
+const DT: f32 = 1. / 60.; // ie. 1 / intended FPS
+const MAX_STEPS: u8 = 6;
+
 pub struct Physics {
+    accumulator: f32,
+
     physics_pipeline: PhysicsPipeline,
     integration_parameters: IntegrationParameters,
     island_manager: IslandManager,
@@ -26,6 +31,7 @@ pub struct Physics {
 impl Physics {
     pub fn new() -> Self {
         Physics {
+            accumulator: 0.,
             physics_pipeline: PhysicsPipeline::new(),
             integration_parameters: IntegrationParameters::default(),
             island_manager: IslandManager::new(),
@@ -39,20 +45,29 @@ impl Physics {
         }
     }
 
-    pub fn update(&mut self, events: &mut Vec<PhysicsEvent>) {
-        self.physics_pipeline.step(
-            &vector![0., 0.],
-            &self.integration_parameters,
-            &mut self.island_manager,
-            &mut self.broad_phase,
-            &mut self.narrow_phase,
-            &mut self.rigid_body_set,
-            &mut self.collider_set,
-            &mut self.joint_set,
-            &mut self.ccd_solver,
-            &(),
-            &RawEventCollector(Mutex::new(&mut self.events)),
-        );
+    pub fn update(&mut self, delta: f32, events: &mut Vec<PhysicsEvent>) {
+        // source: https://gafferongames.com/post/fix_your_timestep
+        self.accumulator += delta;
+        let mut steps_taken = 0;
+        while self.accumulator >= DT && steps_taken < MAX_STEPS {
+            steps_taken += 1;
+
+            self.physics_pipeline.step(
+                &vector![0., 0.],
+                &self.integration_parameters,
+                &mut self.island_manager,
+                &mut self.broad_phase,
+                &mut self.narrow_phase,
+                &mut self.rigid_body_set,
+                &mut self.collider_set,
+                &mut self.joint_set,
+                &mut self.ccd_solver,
+                &(),
+                &RawEventCollector(Mutex::new(&mut self.events)),
+            );
+
+            self.accumulator -= DT;
+        }
 
         for (kind, handle1, handle2) in self.events.drain(..) {
             events.push(PhysicsEvent::new(

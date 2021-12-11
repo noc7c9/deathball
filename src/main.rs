@@ -138,7 +138,7 @@ async fn main() {
 
         // Update subsystems
         res.input.update();
-        res.physics.update(&mut physics_events);
+        res.physics.update(res.delta, &mut physics_events);
 
         for event in physics_events.drain(..) {
             scene.handle_physics_event(&mut res, event);
