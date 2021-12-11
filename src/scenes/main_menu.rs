@@ -26,43 +26,48 @@ impl Scene for MainMenu {
     fn update_ui(&mut self, res: &mut Resources, ctx: &egui::CtxRef) -> SceneChange {
         use egui::*;
 
-        Window::new("title text")
-            .title_bar(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_TOP, (0., 80.))
-            .show(ctx, |ui| {
-                ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
-                    ui.add(
-                        Label::new("GIANT HORSE DEATHBALL")
-                            .text_style(TextStyle::Heading)
-                            .wrap(false),
-                    );
-
-                    let texture = res.assets.icon;
-                    texture.set_filter(FilterMode::Nearest);
-                    let texture_id = texture.raw_miniquad_texture_handle().gl_internal_id();
-                    ui.image(TextureId::User(texture_id as u64), vec2(224., 224.));
-                })
-            });
-
         let mut scene_change = SceneChange::None;
 
-        Window::new("buttons")
-            .title_bar(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_BOTTOM, (0., -75.))
+        Area::new("Main Menu")
+            .movable(false)
+            .anchor(egui::Align2::CENTER_CENTER, (0., 0.))
             .show(ctx, |ui| {
-                ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
-                    ui.spacing_mut().button_padding = vec2(0., 80.);
+                Resize::default()
+                    .auto_sized()
+                    .max_size((640., 420.))
+                    .show(ui, |ui| {
+                        Frame::window(&ctx.style()).show(ui, |ui| {
+                            ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
+                                ui.add(Label::new("GIANT HORSE DEATHBALL").heading().wrap(false));
 
-                    if ui.button("New Game").clicked() {
-                        scene_change =
-                            SceneChange::Change(scenes::Combat::boxed(res, levels::Tutorial));
-                    }
-                    if !cfg!(target_arch = "wasm32") && ui.button("Quit").clicked() {
-                        scene_change = SceneChange::Quit;
-                    }
-                })
+                                ui.allocate_exact_size(vec2(0., 16.), Sense::hover());
+
+                                let texture = res.assets.icon;
+                                texture.set_filter(FilterMode::Nearest);
+                                let texture_id =
+                                    texture.raw_miniquad_texture_handle().gl_internal_id();
+                                ui.image(TextureId::User(texture_id as u64), vec2(224., 224.));
+                            })
+                        });
+
+                        ui.allocate_exact_size(vec2(0., 64.), Sense::hover());
+
+                        Frame::window(&ctx.style()).show(ui, |ui| {
+                            ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
+                                ui.spacing_mut().button_padding = vec2(0., 32.);
+
+                                if ui.button("New Game").clicked() {
+                                    scene_change = SceneChange::Change(scenes::Combat::boxed(
+                                        res,
+                                        levels::Tutorial,
+                                    ));
+                                }
+                                if !cfg!(target_arch = "wasm32") && ui.button("Quit").clicked() {
+                                    scene_change = SceneChange::Quit;
+                                }
+                            })
+                        });
+                    });
             });
 
         if crate::debug::ENABLE_LEVEL_SELECT {

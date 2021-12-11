@@ -92,68 +92,75 @@ impl Scene for LevelSelect {
                 ui.label(format!("Current Score: {}", res.score as f32 / 100.));
             });
 
-        Area::new("header")
-            .anchor(egui::Align2::CENTER_TOP, (0., 80.))
-            .show(ctx, |ui| {
-                Resize::default().fixed_size((640., 0.)).show(ui, |ui| {
-                    ui.label("UN's Table");
-                });
-            });
-
-        Window::new("chatter")
-            .title_bar(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_TOP, (0., 110.))
-            .vscroll(true)
-            .fixed_size((600., 230.))
-            .show(ctx, |ui| {
-                Resize::default().fixed_size((600., 230.)).show(ui, |ui| {
-                    for (i, chatter) in self.chatter.iter().enumerate() {
-                        let align = if i % 2 == 0 { Align::Min } else { Align::Max };
-                        ui.with_layout(Layout::top_down(align), |ui| {
-                            ui.label(chatter);
-                        });
-                    }
-                })
-            });
-
         let mut scene_change = SceneChange::None;
 
-        Window::new("buttons")
-            .title_bar(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_BOTTOM, (0., -160.))
+        Area::new("Level Select")
+            .movable(false)
+            .anchor(egui::Align2::CENTER_CENTER, (0., 0.))
             .show(ctx, |ui| {
-                ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
-                    ui.spacing_mut().button_padding = vec2(0., 40.);
+                Resize::default()
+                    .auto_sized()
+                    .max_size((640., 420.))
+                    .show(ui, |ui| {
+                        ui.label("UN's Table");
 
-                    let beat_scenario_1 = res.beaten.contains(&levels::Scenario1);
-                    let beat_scenario_2 = res.beaten.contains(&levels::Scenario2);
-                    let beat_final = res.beaten.contains(&levels::Final);
+                        Frame::window(&ctx.style()).show(ui, |ui| {
+                            Resize::default().fixed_size((640., 230.)).show(ui, |ui| {
+                                ScrollArea::vertical().stick_to_bottom().show(ui, |ui| {
+                                    for (i, chatter) in self.chatter.iter().enumerate() {
+                                        let align =
+                                            if i % 2 == 0 { Align::Min } else { Align::Max };
+                                        ui.with_layout(Layout::top_down(align), |ui| {
+                                            ui.label(chatter)
+                                        });
+                                    }
+                                })
+                            })
+                        });
 
-                    if !beat_scenario_1 && ui.button("attack on humans").clicked() {
-                        scene_change =
-                            SceneChange::Change(scenes::Combat::boxed(res, levels::Scenario1));
-                    }
-                    if !beat_scenario_2 && ui.button("down with the foundations").clicked() {
-                        scene_change =
-                            SceneChange::Change(scenes::Combat::boxed(res, levels::Scenario2));
-                    }
-                    if beat_scenario_1 && beat_scenario_2 {
-                        if !beat_final && ui.button("final level").clicked() {
-                            scene_change =
-                                SceneChange::Change(scenes::Combat::boxed(res, levels::Final));
-                        }
-                        if beat_final {
-                            let label = format!(
-                                "Thanks for playing! You finished with a score of {}",
-                                res.score as f32 / 100.
-                            );
-                            let label = Label::new(label).wrap(false);
-                            ui.add(label);
-                        }
-                    }
-                })
+                        ui.allocate_exact_size(vec2(0., 64.), Sense::hover());
+
+                        Frame::window(&ctx.style()).show(ui, |ui| {
+                            ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
+                                ui.spacing_mut().button_padding = vec2(0., 32.);
+
+                                let beat_scenario_1 = res.beaten.contains(&levels::Scenario1);
+                                let beat_scenario_2 = res.beaten.contains(&levels::Scenario2);
+                                let beat_final = res.beaten.contains(&levels::Final);
+
+                                if !beat_scenario_1 && ui.button("attack on humans").clicked() {
+                                    scene_change = SceneChange::Change(scenes::Combat::boxed(
+                                        res,
+                                        levels::Scenario1,
+                                    ));
+                                }
+                                if !beat_scenario_2
+                                    && ui.button("down with the foundations").clicked()
+                                {
+                                    scene_change = SceneChange::Change(scenes::Combat::boxed(
+                                        res,
+                                        levels::Scenario2,
+                                    ));
+                                }
+                                if beat_scenario_1 && beat_scenario_2 {
+                                    if !beat_final && ui.button("final level").clicked() {
+                                        scene_change = SceneChange::Change(scenes::Combat::boxed(
+                                            res,
+                                            levels::Final,
+                                        ));
+                                    }
+                                    if beat_final {
+                                        let label = format!(
+                                            "Thanks for playing! You finished with a score of {}",
+                                            res.score as f32 / 100.
+                                        );
+                                        let label = Label::new(label).wrap(false);
+                                        ui.add(label);
+                                    }
+                                }
+                            })
+                        });
+                    });
             });
 
         scene_change

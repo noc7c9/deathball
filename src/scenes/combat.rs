@@ -287,14 +287,16 @@ impl Scene for Combat {
             });
 
         Area::new("objective complete")
-            .anchor(egui::Align2::CENTER_TOP, (0., 64.))
+            .anchor(egui::Align2::CENTER_TOP, (0., 96.))
             .show(ctx, |ui| {
                 ui.with_layout(Layout::top_down(Align::Center), |ui| {
                     if let Status::HasLost = self.status {
-                        ui.label("You Lose!");
+                        ui.add(Label::new("You Lose!").heading());
+                        ui.allocate_exact_size(vec2(0., 8.), Sense::hover());
                         ui.label("Press Spacebar to retry.");
                     } else if let Status::HasWon = self.status {
-                        ui.label("You Win!");
+                        ui.add(Label::new("You Win!").heading());
+                        ui.allocate_exact_size(vec2(0., 8.), Sense::hover());
                         ui.label("Press Spacebar to go to next screen.");
                     }
                 });

@@ -117,6 +117,10 @@ async fn main() {
                 .insert(TextStyle::Body, (FontFamily::Proportional, 18.));
 
             fonts
+                .family_and_size
+                .insert(TextStyle::Button, (FontFamily::Proportional, 20.));
+
+            fonts
         });
 
         let mut style: egui::Style = (*ctx.style()).clone();
@@ -210,7 +214,7 @@ async fn loading_screen() -> Assets {
                             ui.with_layout(
                                 Layout::centered_and_justified(Direction::TopDown),
                                 |ui| {
-                                    ui.add(Label::new(progress).text_style(TextStyle::Heading));
+                                    ui.add(Label::new(progress).heading());
                                 },
                             );
                         });
