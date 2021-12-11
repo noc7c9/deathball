@@ -95,23 +95,23 @@ impl Scene for Combat {
         // Update camera
         {
             // Mouse Panning
-            if let Some(drag) = res.input.get_mouse_right_button_drag() {
+            if let Some(drag) = res.input.pan_camera_mouse_drag() {
                 let previous = self.camera.screen_to_world(drag.previous);
                 let current = self.camera.screen_to_world(drag.current);
                 self.camera.target += previous - current;
             }
             // WASD Panning
             else {
-                self.camera.target += res.input.get_wasd_axes() * PAN_SPEED;
+                self.camera.target += res.input.pan_camera_keyboard() * PAN_SPEED;
             }
 
             // Mouse Zoom
-            if let Some(amount) = res.input.get_mouse_wheel() {
+            if let Some(amount) = res.input.zoom_camera() {
                 self.camera.zoom =
                     (self.camera.zoom * ZOOM_FACTOR.powf(amount)).clamp(MIN_ZOOM, MAX_ZOOM);
             }
 
-            if res.input.is_mouse_middle_button_pressed() {
+            if res.input.reset_camera() {
                 self.camera.zoom = INITIAL_ZOOM;
                 self.camera.target = self.death_ball.get_position(res);
             }
@@ -168,10 +168,10 @@ impl Scene for Combat {
         }
 
         // handle scene changing
-        if matches!(self.status, Status::HasLost) && res.input.is_spacebar_down() {
+        if matches!(self.status, Status::HasLost) && res.input.go_to_next_scene() {
             return SceneChange::Change(scenes::Combat::boxed(res, self.level));
         }
-        if matches!(self.status, Status::HasWon) && res.input.is_spacebar_down() {
+        if matches!(self.status, Status::HasWon) && res.input.go_to_next_scene() {
             res.beaten.insert(self.level);
             res.score += self.score.floor() as u32;
             return SceneChange::Change(scenes::LevelSelect::boxed(res));

@@ -28,7 +28,7 @@ impl DeathBall {
     pub fn update(&mut self, res: &mut Resources, camera: &Camera) {
         self.alpha *= 0.75;
 
-        if let Some(position) = res.input.get_mouse_left_button_down() {
+        if let Some(position) = res.input.move_deathball() {
             let position = camera.screen_to_world(position);
             res.physics.set_position(self.handle, position);
 

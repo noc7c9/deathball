@@ -37,11 +37,19 @@ impl Input {
         }
     }
 
-    pub fn is_spacebar_down(&self) -> bool {
+    pub fn go_to_next_scene(&self) -> bool {
         is_key_down(KeyCode::Space)
     }
 
-    pub fn get_wasd_axes(&self) -> Vec2 {
+    pub fn move_deathball(&self) -> Option<Vec2> {
+        if is_mouse_button_down(MouseButton::Left) {
+            Some(mouse_position().into())
+        } else {
+            None
+        }
+    }
+
+    pub fn pan_camera_keyboard(&self) -> Vec2 {
         let mut delta = vec2(0., 0.);
         if is_key_down(KeyCode::W) {
             delta.y -= 1.0;
@@ -58,23 +66,15 @@ impl Input {
         delta.normalize_or_zero()
     }
 
-    pub fn is_mouse_middle_button_pressed(&self) -> bool {
-        is_mouse_button_down(MouseButton::Middle)
-    }
-
-    pub fn get_mouse_right_button_drag(&self) -> Option<MouseDrag> {
+    pub fn pan_camera_mouse_drag(&self) -> Option<MouseDrag> {
         self.rmb_drag
     }
 
-    pub fn get_mouse_left_button_down(&self) -> Option<Vec2> {
-        if is_mouse_button_down(MouseButton::Left) {
-            Some(mouse_position().into())
-        } else {
-            None
-        }
+    pub fn reset_camera(&self) -> bool {
+        is_mouse_button_down(MouseButton::Middle)
     }
 
-    pub fn get_mouse_wheel(&self) -> Option<f32> {
+    pub fn zoom_camera(&self) -> Option<f32> {
         let value = mouse_wheel().1;
         if value == 0.0 {
             None
