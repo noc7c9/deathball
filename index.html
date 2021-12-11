@@ -5,7 +5,8 @@
         <style>
             html,
             body,
-            canvas {
+            canvas,
+            #loading-msg {
                 margin: 0px;
                 padding: 0px;
                 width: 100%;
@@ -15,26 +16,25 @@
                 background: black;
                 z-index: 0;
             }
+
+            #loading-msg {
+                color: white;
+                font-size: 2rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-family: sans-serif;
+                z-index: 10;
+            }
         </style>
     </head>
 
     <body>
         <canvas id="glcanvas" tabindex="1"></canvas>
+        <div id="loading-msg">Loading: 0.0%</div>
         <script src="assets/mq_js_bundle.js"></script>
         <script type="module">
             import init, { set_wasm } from './deathball.js';
-
-            document.addEventListener('keydown', onKeyDown, false);
-
-            function onKeyDown(evt) {
-                if (!evt.metaKey || evt.key !== 'Enter') return;
-                console.log(document.fullscreenElement);
-                if (document.fullscreenElement != null) {
-                    canvas.requestFullscreen();
-                } else {
-                    document.exitFullscreen();
-                }
-            }
 
             // Disable context menu on canvas so that right click works in-game
             canvas.addEventListener(
@@ -42,6 +42,39 @@
                 (e) => e.preventDefault(),
                 false,
             );
+
+            // chrome (and maybe other browsers) will block audio from playing
+            // if the user hasn't interacted with the page
+            // so to handle that, ensure the user has interacted before starting
+            // the game
+            let hasInteracted = false;
+            let hasLoaded = false;
+            document.addEventListener(
+                'mousedown',
+                () => {
+                    hasInteracted = true;
+                    removeLoadingMsg();
+                },
+                { once: true },
+            );
+
+            const loadingMsg = document.querySelector('#loading-msg');
+            window.update_loading_msg = (percent, progress) => {
+                if (percent >= 1) {
+                    hasLoaded = true;
+                    loadingMsg.innerText = 'Click to Start';
+                    removeLoadingMsg();
+                } else {
+                    loadingMsg.innerText = progress;
+                }
+            };
+            window.can_start = () => hasInteracted;
+
+            function removeLoadingMsg() {
+                if (hasInteracted && hasLoaded) {
+                    loadingMsg.remove();
+                }
+            }
 
             (async () => {
                 const wbg = await init();

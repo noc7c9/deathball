@@ -204,6 +204,8 @@ function __wbg_adapter_26(arg0, arg1) {
     wasm._dyn_core__ops__function__FnMut_____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hf4a1fd5f01c4d4b3(arg0, arg1);
 }
 
+function notDefined(what) { return () => { throw new Error(`${what} is not defined`); }; }
+
 function handleError(f, args) {
     try {
         return f.apply(this, args);
@@ -281,6 +283,10 @@ async function init(input) {
         var ret = false;
         return ret;
     };
+    imports.wbg.__wbg_updateloadingmsg_3d31d9369fa93767 = function(arg0, arg1, arg2) {
+        update_loading_msg(arg0, getStringFromWasm0(arg1, arg2));
+    };
+    imports.wbg.__wbg_canstart_7c364fcaff67c8bc = typeof can_start == 'function' ? can_start : notDefined('can_start');
     imports.wbg.__wbg_instanceof_Window_c4b70662a0d2c5ec = function(arg0) {
         var ret = getObject(arg0) instanceof Window;
         return ret;
@@ -470,8 +476,8 @@ async function init(input) {
     imports.wbg.__wbindgen_throw = function(arg0, arg1) {
         throw new Error(getStringFromWasm0(arg0, arg1));
     };
-    imports.wbg.__wbindgen_closure_wrapper1299 = function(arg0, arg1, arg2) {
-        var ret = makeMutClosure(arg0, arg1, 61, __wbg_adapter_26);
+    imports.wbg.__wbindgen_closure_wrapper1320 = function(arg0, arg1, arg2) {
+        var ret = makeMutClosure(arg0, arg1, 62, __wbg_adapter_26);
         return addHeapObject(ret);
     };
     return imports.wbg;
