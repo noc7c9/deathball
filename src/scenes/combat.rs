@@ -23,7 +23,7 @@ const PAN_SPEED: f32 = 15.;
 
 const INITIAL_ZOOM: f32 = 0.0015;
 const ZOOM_FACTOR: f32 = 1.05;
-const MIN_ZOOM: f32 = 0.0004;
+const MIN_ZOOM: f32 = 0.00035;
 const MAX_ZOOM: f32 = 0.005;
 
 pub struct Combat {
