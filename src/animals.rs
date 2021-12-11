@@ -117,7 +117,10 @@ impl Animal {
     ) -> Self {
         let variant = variant.to_data();
         let sprite = res.assets.animals.sprite(variant.sprite.into());
-        let collider = physics::ball(16.).mass(1.).contact_events();
+        let collider = physics::ball(16.)
+            .mass(1.)
+            .linear_damping(0.1)
+            .contact_events();
         let handle = res.physics.add_dynamic(idx, collider, position);
         Animal {
             sprite,

@@ -114,6 +114,9 @@ impl Physics {
         let mut rigid_body = RigidBodyBuilder::new_dynamic()
             .translation(position.into())
             .ccd_enabled(true);
+        if let Some(factor) = my_collider.linear_damping {
+            rigid_body = rigid_body.linear_damping(factor);
+        }
         if my_collider.lock_rotations {
             rigid_body = rigid_body.lock_rotations();
         }
@@ -330,6 +333,7 @@ impl<'a> EventHandler for RawEventCollector<'a> {
 
 pub struct MyColliderBuilder {
     lock_rotations: bool,
+    linear_damping: Option<f32>,
     inner: ColliderBuilder,
 }
 
@@ -337,6 +341,7 @@ impl MyColliderBuilder {
     pub fn new(inner: ColliderBuilder) -> Self {
         MyColliderBuilder {
             lock_rotations: false,
+            linear_damping: None,
             inner,
         }
     }
@@ -364,6 +369,11 @@ impl MyColliderBuilder {
 
     pub fn lock_rotations(mut self) -> Self {
         self.lock_rotations = true;
+        self
+    }
+
+    pub fn linear_damping(mut self, factor: f32) -> Self {
+        self.linear_damping = Some(factor);
         self
     }
 }
