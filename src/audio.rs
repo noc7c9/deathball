@@ -18,8 +18,8 @@ const MAX_KILLED_SFX_PLAYING: usize = 6;
 pub struct AudioManager {
     _manager: KiraAudioManager,
     pub bgm: BackgroundMusic,
-    hit_sfx: SoundEffects,
-    killed_sfx: SoundEffects,
+    pub hit_sfx: SoundEffects,
+    pub killed_sfx: SoundEffects,
 }
 
 impl AudioManager {
@@ -36,14 +36,6 @@ impl AudioManager {
             hit_sfx,
             killed_sfx,
         }
-    }
-
-    pub fn play_hit_sfx(&mut self) {
-        self.hit_sfx.play();
-    }
-
-    pub fn play_killed_sfx(&mut self) {
-        self.killed_sfx.play();
     }
 }
 
@@ -135,7 +127,7 @@ impl BackgroundMusic {
     }
 }
 
-struct SoundEffects {
+pub struct SoundEffects {
     sounds: Vec<SoundHandle>,
     playing: Vec<InstanceHandle>,
 }
@@ -150,7 +142,7 @@ impl SoundEffects {
         }
     }
 
-    fn play(&mut self) {
+    pub fn play(&mut self) {
         if crate::debug::DISABLE_SFX {
             return;
         }

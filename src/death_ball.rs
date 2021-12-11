@@ -3,6 +3,7 @@ use macroquad::prelude::*;
 use crate::{camera::Camera, groups, physics, spritesheet::Sprite, Resources};
 
 const SIZE: f32 = 50.;
+const FADE_OUT_RATE: f32 = 0.75;
 
 pub struct DeathBall {
     handle: physics::SensorHandle,
@@ -28,7 +29,7 @@ impl DeathBall {
     }
 
     pub fn update(&mut self, res: &mut Resources, camera: &Camera) {
-        self.alpha *= 0.75;
+        self.alpha *= FADE_OUT_RATE;
 
         if let Some(position) = res.input.move_deathball() {
             let position = camera.screen_to_world(position);

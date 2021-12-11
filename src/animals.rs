@@ -4,6 +4,9 @@ use crate::{
     death_ball::DeathBall, entities::GenerationalIndex, physics, spritesheet::Sprite, Resources,
 };
 
+const SPEED: f32 = 10.;
+const DAMPING: f32 = 0.1;
+
 pub struct Animal {
     handle: physics::DynamicHandle,
     sprite: Sprite,
@@ -119,7 +122,7 @@ impl Animal {
         let sprite = res.assets.animals.sprite(variant.sprite.into());
         let collider = physics::ball(16.)
             .mass(1.)
-            .linear_damping(0.1)
+            .linear_damping(DAMPING)
             .contact_events();
         let handle = res.physics.add_dynamic(idx, collider, position);
         Animal {
@@ -136,11 +139,9 @@ impl Animal {
     }
 
     pub fn update(&mut self, res: &mut Resources, death_ball: &DeathBall) {
-        const UNIT_SPEED: f32 = 10.;
-
         if self.is_affected_by_death_ball {
             let position = res.physics.get_position(self.handle);
-            let impulse = (death_ball.get_position(res) - position).normalize() * UNIT_SPEED;
+            let impulse = (death_ball.get_position(res) - position).normalize() * SPEED;
             res.physics.apply_impulse(self.handle, impulse);
         }
     }

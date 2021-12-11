@@ -222,7 +222,7 @@ async fn loading_screen() -> Assets {
 
                 egui_macroquad::draw();
             }
-            assets::Progress::Complete(assets) => return assets,
+            assets::Progress::Complete(assets) => return *assets,
         }
 
         next_frame().await;
@@ -246,7 +246,7 @@ async fn loading_screen() -> Assets {
                 info!("{}", progress);
                 update_loading_msg(percent, &progress);
             }
-            assets::Progress::Complete(assets) => break assets,
+            assets::Progress::Complete(assets) => break *assets,
         }
     };
 

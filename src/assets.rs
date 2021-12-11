@@ -4,6 +4,7 @@ use crate::audio::Sound;
 use crate::spritesheet::Spritesheet;
 
 const SPRITE_SIZE: f32 = 32.;
+
 pub struct Assets {
     // textures
     pub animals: Spritesheet,
@@ -60,7 +61,7 @@ pub struct AssetsLoader {
 
 pub enum Progress {
     InProgress(f32),
-    Complete(Assets),
+    Complete(Box<Assets>),
 }
 
 impl AssetsLoader {
@@ -176,7 +177,7 @@ impl AssetsLoader {
                     icon: self.icon.take().unwrap(),
                     font: self.font.take(),
                 };
-                return Progress::Complete(assets);
+                return Progress::Complete(Box::new(assets));
             }
             _ => unreachable!(),
         }

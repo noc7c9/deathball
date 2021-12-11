@@ -25,6 +25,7 @@ const CHATTER_TIME: f32 = 1.;
 const WANDER_INITIAL_POSITION: (f32, f32) = (237., 187.);
 const WANDER_TIME: (f32, f32) = (2., 10.);
 const WANDER_SPEED: (f32, f32) = (25., 50.);
+const WANDER_REGION_MARGIN: f32 = 64.;
 
 pub struct LevelSelect {
     chatter: Vec<&'static str>,
@@ -210,7 +211,7 @@ impl Wanderer {
         self.position += direction * self.speed * res.delta;
 
         let region = {
-            let s = 64.;
+            let s = WANDER_REGION_MARGIN;
             Rect::new(s, s, screen_width() - s - s, screen_height() - s - s)
         };
         if !region.contains(self.position) {

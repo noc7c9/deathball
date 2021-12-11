@@ -204,9 +204,9 @@ impl Scene for Combat {
                 let just_destroyed = building.damage(animal.damage);
                 if just_destroyed {
                     self.objective.on_destroy_building();
-                    res.audio.play_killed_sfx();
+                    res.audio.killed_sfx.play();
                 } else {
-                    res.audio.play_hit_sfx();
+                    res.audio.hit_sfx.play();
                 }
 
                 // spawn hit effects on contact
@@ -231,9 +231,9 @@ impl Scene for Combat {
                     let just_killed = enemy.damage(animal.damage);
                     if just_killed {
                         self.objective.on_kill_enemy();
-                        res.audio.play_killed_sfx();
+                        res.audio.killed_sfx.play();
                     } else {
-                        res.audio.play_hit_sfx();
+                        res.audio.hit_sfx.play();
                     }
 
                     // spawn hit effects on contact
@@ -311,7 +311,7 @@ impl Scene for Combat {
                     cols[0].label("Objective:");
                     cols[0].label("Current:");
 
-                    cols[1].add(Label::new(self.objective.to_string()).wrap(false));
+                    cols[1].add(Label::new(&self.objective).wrap(false));
                     cols[1].label(self.objective.current());
                 });
             });

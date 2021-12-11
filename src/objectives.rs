@@ -66,10 +66,12 @@ impl Objective {
     pub fn current(&self) -> u8 {
         self.current
     }
+}
 
-    pub fn to_string(&self) -> String {
+impl std::fmt::Display for Objective {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (prefix, suffix_singular, suffix_plural) = match self.kind {
-            Kind::None => return "None".to_string(),
+            Kind::None => return f.write_str("None"),
             Kind::SaveAnimals => ("Save", "Animal", "Animals"),
             Kind::DestroyBuildings => ("Destroy", "Building", "Buildings"),
             Kind::KillEnemies => ("Kill", "Enemy", "Enemies"),
@@ -80,6 +82,6 @@ impl Objective {
         } else {
             suffix_plural
         };
-        format!("{} {} {}", prefix, self.target, suffix)
+        write!(f, "{} {} {}", prefix, self.target, suffix)
     }
 }
