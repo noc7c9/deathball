@@ -110,6 +110,11 @@ impl Scene for Combat {
                 self.camera.zoom =
                     (self.camera.zoom * ZOOM_FACTOR.powf(amount)).clamp(MIN_ZOOM, MAX_ZOOM);
             }
+
+            if res.input.is_mouse_middle_button_pressed() {
+                self.camera.zoom = INITIAL_ZOOM;
+                self.camera.target = self.death_ball.get_position(res);
+            }
         }
 
         // Update entities

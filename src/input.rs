@@ -58,6 +58,10 @@ impl Input {
         delta.normalize_or_zero()
     }
 
+    pub fn is_mouse_middle_button_pressed(&self) -> bool {
+        is_mouse_button_down(MouseButton::Middle)
+    }
+
     pub fn get_mouse_right_button_drag(&self) -> Option<MouseDrag> {
         self.rmb_drag
     }
