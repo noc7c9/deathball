@@ -26,6 +26,16 @@ const ZOOM_FACTOR: f32 = 1.05;
 const MIN_ZOOM: f32 = 0.00035;
 const MAX_ZOOM: f32 = 0.005;
 
+const LOSE_TIME: f32 = 5.;
+
+#[derive(PartialEq)]
+enum Status {
+    Playing,
+    Losing { timer: f32 },
+    HasLost,
+    HasWon,
+}
+
 pub struct Combat {
     camera: Camera,
     level: Level,
@@ -39,6 +49,7 @@ pub struct Combat {
     hit_effects: Entities<HitEffect, { groups::HIT_EFFECT }>,
     death_ball_size: u8,
     score: f32,
+    status: Status,
 }
 
 impl Combat {
@@ -60,6 +71,7 @@ impl Combat {
             hit_effects,
             death_ball_size: 0,
             score: data.max_score as f32,
+            status: Status::Playing,
         })
     }
 }
@@ -126,12 +138,35 @@ impl Scene for Combat {
             };
         }
 
-        if !self.objective.is_complete() {
+        // handle status changes
+        match self.status {
+            Status::Playing | Status::Losing { .. } if self.objective.is_complete() => {
+                self.status = Status::HasWon;
+            }
+            Status::Playing if self.death_ball_size == 0 => {
+                self.status = Status::Losing { timer: LOSE_TIME };
+            }
+            Status::Losing { .. } if self.death_ball_size > 0 => {
+                self.status = Status::Playing;
+            }
+            Status::Losing { ref mut timer } => {
+                *timer -= res.delta;
+                if *timer < 0. {
+                    self.status = Status::HasLost;
+                }
+            }
+            _ => {}
+        }
+
+        if !matches!(self.status, Status::HasWon) {
             self.score = (self.score - res.delta * 100.).max(0.);
         }
 
-        // Handle objective completion
-        if self.objective.is_complete() && res.input.is_spacebar_down() {
+        // handle scene changing
+        if matches!(self.status, Status::HasLost) && res.input.is_spacebar_down() {
+            return SceneChange::Change(scenes::Combat::boxed(res, self.level));
+        }
+        if matches!(self.status, Status::HasWon) && res.input.is_spacebar_down() {
             res.beaten.insert(self.level);
             res.score += self.score.floor() as u32;
             return SceneChange::Change(scenes::LevelSelect::boxed(res));
@@ -246,16 +281,19 @@ impl Scene for Combat {
                 });
             });
 
-        if self.objective.is_complete() {
-            Area::new("objective complete")
-                .anchor(egui::Align2::CENTER_TOP, (0., 64.))
-                .show(ctx, |ui| {
-                    ui.with_layout(Layout::top_down(Align::Center), |ui| {
+        Area::new("objective complete")
+            .anchor(egui::Align2::CENTER_TOP, (0., 64.))
+            .show(ctx, |ui| {
+                ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                    if let Status::HasLost = self.status {
+                        ui.label("You Lose!");
+                        ui.label("Press Spacebar to retry.");
+                    } else if let Status::HasWon = self.status {
                         ui.label("You Win!");
                         ui.label("Press Spacebar to go to next screen.");
-                    });
+                    }
                 });
-        }
+            });
 
         Window::new("objective")
             .title_bar(false)
@@ -277,8 +315,13 @@ impl Scene for Combat {
             .anchor(egui::Align2::RIGHT_BOTTOM, (-8., -8.))
             .show(ctx, |ui| {
                 ui.with_layout(Layout::top_down(Align::Center), |ui| {
-                    ui.label("Deathball Count");
-                    ui.label(self.death_ball_size);
+                    if let Status::Losing { timer } = self.status {
+                        ui.label("Deathball Is Dissolved");
+                        ui.label(timer.ceil());
+                    } else {
+                        ui.label("Deathball Count");
+                        ui.label(self.death_ball_size);
+                    }
                 });
             });
 

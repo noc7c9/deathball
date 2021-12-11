@@ -91,7 +91,6 @@ async fn main() {
     let mut fps = 0.;
 
     let mut scene: Box<dyn Scene> = scenes::MainMenu::boxed();
-    let mut new_scene;
 
     egui_macroquad::cfg(|ctx| {
         use egui::*;
@@ -134,7 +133,16 @@ async fn main() {
     loop {
         res.delta = get_frame_time();
 
-        new_scene = scene.update(&mut res);
+        match scene.update(&mut res) {
+            SceneChange::None => {}
+            SceneChange::Quit => break,
+            SceneChange::Change(new_scene) => {
+                scene = new_scene;
+                scene.on_enter(&mut res);
+                next_frame().await;
+                continue;
+            }
+        }
 
         // Update subsystems
         res.input.update();
@@ -144,26 +152,26 @@ async fn main() {
             scene.handle_physics_event(&mut res, event);
         }
 
-        egui_macroquad::ui(|egui_ctx| {
-            let change = scene.update_ui(&mut res, egui_ctx);
-            if !matches!(change, SceneChange::None) {
-                new_scene = change
+        let mut new_scene = SceneChange::None;
+        egui_macroquad::ui(|ctx| new_scene = scene.update_ui(&mut res, ctx));
+        match new_scene {
+            SceneChange::None => {}
+            SceneChange::Quit => break,
+            SceneChange::Change(new_scene) => {
+                // needs to be called every if egui has been called this frame
+                egui_macroquad::draw();
+
+                scene = new_scene;
+                scene.on_enter(&mut res);
+                next_frame().await;
+                continue;
             }
-        });
+        }
 
         // Draw
         scene.draw(&res);
 
         egui_macroquad::draw();
-
-        match new_scene {
-            SceneChange::None => {}
-            SceneChange::Quit => break,
-            SceneChange::Change(new_scene) => {
-                scene = new_scene;
-                scene.on_enter(&mut res);
-            }
-        }
 
         if crate::debug::SHOW_FPS {
             fps = (fps * FPS_SMOOTHING) + ((1. / res.delta) * (1. - FPS_SMOOTHING));
