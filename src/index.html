@@ -36,18 +36,6 @@
         <script type="module">
             import init, { set_wasm } from './deathball.js';
 
-            document.addEventListener('keydown', onKeyDown, false);
-
-            function onKeyDown(evt) {
-                if (!evt.metaKey || evt.key !== 'Enter') return;
-                console.log(document.fullscreenElement);
-                if (document.fullscreenElement != null) {
-                    canvas.requestFullscreen();
-                } else {
-                    document.exitFullscreen();
-                }
-            }
-
             // Disable context menu on canvas so that right click works in-game
             canvas.addEventListener(
                 'contextmenu',
