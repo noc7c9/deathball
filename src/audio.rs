@@ -11,7 +11,11 @@ use macroquad::prelude::*;
 
 use super::Assets;
 
-const FADE_TIME: f64 = 2.0;
+const BGM_VOLUME: f64 = 0.5;
+const SFX_VOLUME: f64 = 0.5;
+const BGM_FADE_IN_TIME: f64 = 2.0;
+const BGM_FADE_OUT_TIME: f64 = 1.0;
+
 const MAX_HIT_SFX_PLAYING: usize = 4;
 const MAX_KILLED_SFX_PLAYING: usize = 6;
 
@@ -92,7 +96,7 @@ impl BackgroundMusic {
         if let Some(mut instance) = self.playing.take() {
             instance
                 .stop(StopInstanceSettings {
-                    fade_tween: Self::linear_tween(),
+                    fade_tween: Self::linear_tween(BGM_FADE_OUT_TIME),
                 })
                 .expect("Failed to stop background music");
         }
@@ -115,15 +119,16 @@ impl BackgroundMusic {
 
         self.playing = sound
             .play(InstanceSettings {
-                fade_in_tween: Self::linear_tween(),
+                volume: BGM_VOLUME.into(),
+                fade_in_tween: Self::linear_tween(BGM_FADE_IN_TIME),
                 loop_start: InstanceLoopStart::Custom(0.),
                 ..Default::default()
             })
             .ok();
     }
 
-    fn linear_tween() -> Option<Tween> {
-        Some(Tween::linear(FADE_TIME))
+    fn linear_tween(time: f64) -> Option<Tween> {
+        Some(Tween::linear(time))
     }
 }
 
@@ -152,7 +157,12 @@ impl SoundEffects {
 
         if self.playing.len() < self.playing.capacity() {
             let idx = rand::gen_range(0, self.sounds.len());
-            let handle = self.sounds[idx].play(Default::default()).unwrap();
+            let handle = self.sounds[idx]
+                .play(InstanceSettings {
+                    volume: SFX_VOLUME.into(),
+                    ..Default::default()
+                })
+                .unwrap();
             self.playing.push(handle);
         }
     }
