@@ -2,6 +2,8 @@ use macroquad::prelude::*;
 
 use crate::{camera::Camera, groups, physics, spritesheet::Sprite, Resources};
 
+const SIZE: f32 = 50.;
+
 pub struct DeathBall {
     handle: physics::SensorHandle,
     sprite: Sprite,
@@ -10,7 +12,7 @@ pub struct DeathBall {
 
 impl DeathBall {
     pub fn new(res: &mut Resources, position: Vec2) -> Self {
-        let collider = physics::ball(16.).mass(1.).intersection_events();
+        let collider = physics::ball(SIZE).mass(1.).intersection_events();
         let handle = res
             .physics
             .add_sensor(groups::DEATH_BALL, collider, position);
