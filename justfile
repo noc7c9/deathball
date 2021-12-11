@@ -8,7 +8,7 @@ watch CMD='check' +ARGS='':
     watchexec --watch src --restart --clear -- just {{CMD}} {{ARGS}}
 
 run +ARGS='':
-    cargo run -- {{ARGS}}
+    cargo run {{ARGS}}
 
 check +ARGS='':
     cargo check {{ARGS}}
