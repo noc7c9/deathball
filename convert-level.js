@@ -44,8 +44,8 @@ const BUILDINGS_MAP = {
     fence: 'FenceH',
     fence_v: 'FenceV',
     garage: 'Garage',
-    hay_bale_v: 'HayBaleH',
-    hay_bale_h: 'HayBaleV',
+    hay_bale_v: 'HayBaleV',
+    hay_bale_h: 'HayBaleH',
     horse_crossing_sign: 'HorseCrossingSign',
     house_1: 'House1',
     house_2: 'House2',
@@ -369,6 +369,7 @@ use macroquad::prelude::*;
 
 use crate::{
     animals::{ Animal, Variant::* },
+    audio::bgm,
     background::{Background, Prop::*},
     buildings::{ Building, Variant::* },
     enemies::{ Enemy, Variant::*},
@@ -381,16 +382,15 @@ use crate::{
 pub fn init(res: &mut Resources) -> LevelData {
     let objective = Objective::${objective};
 
-    let background =
-        Background::builder(Color::new(${bgColor.map(to_float).join(',')}),
-        (${bgSize[0]}, ${bgSize[1]}))
-        .offset(${to_vec2(bgOffset)})
-        .set_props(&[
+    let background = Background::new(
+        Color::new(${bgColor.map(to_float).join(',')}),
+        ${to_vec2(bgOffset)},
+        vec![
     ${props
         .map(({ type, position: [x, y] }) => `((${x}, ${y}), ${type}),`)
         .join('\n    ')}
-        ])
-            .build(res);
+        ]
+    );
 
     let mut animals = Entities::new();
     ${animals
@@ -423,6 +423,7 @@ pub fn init(res: &mut Resources) -> LevelData {
         .join('\n    ')}
 
     LevelData {
+        bgm: bgm::MeadowMeadow,
         max_score: ${maxScore},
         objective,
         background,
