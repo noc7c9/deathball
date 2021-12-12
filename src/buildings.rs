@@ -252,31 +252,6 @@ impl Variant {
 }
 
 impl Building {
-    pub const VARIANTS: [Variant; 22] = [
-        Variant::Barn,
-        Variant::Car,
-        Variant::ConcreteWallH,
-        Variant::ConcreteWallV,
-        Variant::DownWithHorses,
-        Variant::FeedingTrough,
-        Variant::FenceH,
-        Variant::FenceV,
-        Variant::Garage,
-        Variant::HayBaleH,
-        Variant::HayBaleV,
-        Variant::HorseCrossingSign,
-        Variant::House1,
-        Variant::House2,
-        Variant::OilBarrel,
-        Variant::Outhouse,
-        Variant::Portapotty,
-        Variant::Stable,
-        Variant::StableDouble,
-        Variant::StableWide,
-        Variant::StopSign,
-        Variant::YieldSign,
-    ];
-
     pub fn new(
         variant: Variant,
         idx: GenerationalIndex,
@@ -310,14 +285,6 @@ impl Building {
             spawn_count: variant.spawn_count,
             guaranteed_spawns: variant.guaranteed_spawns,
         }
-    }
-
-    pub fn horizontal_fence(idx: GenerationalIndex, res: &mut Resources, position: Vec2) -> Self {
-        Building::new(Building::VARIANTS[6], idx, res, position)
-    }
-
-    pub fn vertical_fence(idx: GenerationalIndex, res: &mut Resources, position: Vec2) -> Self {
-        Building::new(Building::VARIANTS[7], idx, res, position)
     }
 
     /// Returns whether or not the building was destroyed

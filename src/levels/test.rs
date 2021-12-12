@@ -3,9 +3,9 @@ use macroquad::prelude::*;
 use crate::{
     animals::Animal,
     audio::bgm,
-    background::{Background, Prop},
-    buildings::Building,
-    enemies::Enemy,
+    background::{Background, Prop::*},
+    buildings::{Building, Variant::*},
+    enemies::{Enemy, Variant::*},
     entities::Entities,
     levels::LevelData,
     objectives::Objective,
@@ -19,19 +19,19 @@ pub fn init(res: &mut Resources) -> LevelData {
         Color::new(59. / 255., 99. / 255., 38. / 255., 1.),
         vec2(0., 0.),
         vec![
-            ((2, 2), Prop::Grass1),
-            ((3, 2), Prop::Grass2),
-            ((4, 2), Prop::Grass3),
-            ((2, 3), Prop::Gravel1),
-            ((3, 3), Prop::Gravel2),
-            ((4, 3), Prop::Gravel3),
-            ((2, 5), Prop::FlowerWhite),
-            ((3, 5), Prop::FlowerYellow),
-            ((4, 5), Prop::FlowerRed),
-            ((5, 5), Prop::FlowerBlack),
-            ((6, 5), Prop::Eggplant),
-            ((8, 2), Prop::Mud),
-            ((8, 3), Prop::Hay),
+            ((2, 2), Grass1),
+            ((3, 2), Grass2),
+            ((4, 2), Grass3),
+            ((2, 3), Gravel1),
+            ((3, 3), Gravel2),
+            ((4, 3), Gravel3),
+            ((2, 5), FlowerWhite),
+            ((3, 5), FlowerYellow),
+            ((4, 5), FlowerRed),
+            ((5, 5), FlowerBlack),
+            ((6, 5), Eggplant),
+            ((8, 2), Mud),
+            ((8, 3), Hay),
         ],
     );
 
@@ -47,7 +47,7 @@ pub fn init(res: &mut Resources) -> LevelData {
         vec2(-344., 500.),
         vec2(344., 500.),
     ] {
-        buildings.push(|idx| Building::horizontal_fence(idx, res, pos));
+        buildings.push(|idx| Building::new(FenceH, idx, res, pos));
     }
 
     for pos in [
@@ -58,12 +58,12 @@ pub fn init(res: &mut Resources) -> LevelData {
         vec2(530., 0.),
         vec2(530., 344.),
     ] {
-        buildings.push(|idx| Building::vertical_fence(idx, res, pos));
+        buildings.push(|idx| Building::new(FenceV, idx, res, pos));
     }
 
-    buildings.push(|idx| Building::new(Building::VARIANTS[0], idx, res, vec2(0., 0.)));
+    buildings.push(|idx| Building::new(Barn, idx, res, vec2(0., 0.)));
 
-    enemies.push(|idx| Enemy::new(Enemy::VARIANTS[0], idx, res, vec2(0., 100.)));
+    enemies.push(|idx| Enemy::new(Demon, idx, res, vec2(0., 100.)));
 
     for _ in 0..10 {
         let x = rand::gen_range(-450., 450.);

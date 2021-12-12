@@ -114,15 +114,6 @@ impl Variant {
 }
 
 impl Enemy {
-    pub const VARIANTS: [Variant; 6] = [
-        Variant::Demon,
-        Variant::DemonBoss,
-        Variant::Farmer,
-        Variant::Police,
-        Variant::Snowman,
-        Variant::Soldier,
-    ];
-
     pub fn new(
         variant: Variant,
         idx: GenerationalIndex,
