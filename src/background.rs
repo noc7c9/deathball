@@ -2,101 +2,34 @@ use macroquad::prelude::*;
 
 use crate::Resources;
 
-// magic value that makes the sizes match
-const CAMERA_ZOOM_FACTOR: f32 = 2.0;
-
 pub struct Background {
     clear_color: Color,
     offset: Vec2,
-    texture: Texture2D,
+    props: Vec<(Vec2, PropSprite)>,
 }
 
 impl Background {
-    pub fn builder(clear_color: Color, size: (u32, u32)) -> BackgroundBuilder {
-        BackgroundBuilder::new(clear_color, size)
-    }
-
-    pub fn draw(&self) {
-        clear_background(self.clear_color);
-        draw_texture(self.texture, self.offset.x, self.offset.y, WHITE);
-    }
-}
-
-pub struct BackgroundBuilder {
-    clear_color: Color,
-    props: Vec<Option<Prop>>,
-    offset: Option<Vec2>,
-    size: (u32, u32),
-}
-
-impl BackgroundBuilder {
-    fn new(clear_color: Color, size: (u32, u32)) -> Self {
-        BackgroundBuilder {
+    pub fn new(clear_color: Color, offset: Vec2, props: Vec<((u32, u32), Prop)>) -> Self {
+        Self {
             clear_color,
-            props: vec![None; (size.0 * size.1) as usize],
-            offset: None,
-            size,
+            offset,
+            props: props
+                .into_iter()
+                .map(|((x, y), prop)| (vec2(x as f32, y as f32), prop.to_data()))
+                .collect(),
         }
     }
 
-    pub fn set_props(mut self, props: &[((u32, u32), Prop)]) -> Self {
-        for &(xy, prop) in props {
-            self = self.set_prop(xy, prop);
-        }
-        self
-    }
-
-    pub fn set_prop(mut self, (x, y): (u32, u32), prop: Prop) -> Self {
-        let idx = y * self.size.0 + x;
-        self.props[idx as usize] = Some(prop);
-        self
-    }
-
-    pub fn offset(mut self, offset: Vec2) -> Self {
-        self.offset = Some(offset);
-        self
-    }
-
-    pub fn build(self, res: &Resources) -> Background {
+    pub fn draw(&self, res: &Resources) {
         let tile_size = res.assets.props.cell_size;
 
-        let w = self.size.0 * tile_size as u32;
-        let h = self.size.1 * tile_size as u32;
-        let render_target = render_target(w, h);
-
-        let w = w as f32;
-        let h = h as f32;
-
-        let zoom = CAMERA_ZOOM_FACTOR / w;
-        set_camera(&Camera2D {
-            render_target: Some(render_target),
-            zoom: vec2(zoom, zoom * w / h),
-            ..Default::default()
-        });
-
         clear_background(self.clear_color);
 
-        for (idx, prop) in self.props.iter().enumerate() {
-            if let Some(prop) = prop.map(Prop::to_data) {
-                let w = self.size.0 as usize;
-                let h = self.size.1 as usize;
-                let x = (idx % w) as f32 - (w as f32 / 2.);
-                let y = (idx / w) as f32 - (h as f32 / 2.);
-                res.assets
-                    .props
-                    .multisprite(prop.position, prop.size)
-                    .draw_top_right(vec2(x, y) * tile_size);
-            }
-        }
-
-        set_default_camera();
-
-        render_target.texture.set_filter(FilterMode::Nearest);
-
-        Background {
-            clear_color: self.clear_color,
-            offset: self.offset.unwrap_or_else(|| vec2(w / -2., h / -2.)),
-            texture: render_target.texture,
+        for (pos, prop) in &self.props {
+            res.assets
+                .props
+                .multisprite(prop.position, prop.size)
+                .draw_top_right(*pos * tile_size + self.offset);
         }
     }
 }

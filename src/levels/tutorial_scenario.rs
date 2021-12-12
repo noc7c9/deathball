@@ -15,9 +15,10 @@ use crate::{
 pub fn init(res: &mut Resources) -> LevelData {
     let objective = Objective::save_animals(20);
 
-    let background = Background::builder(Color::new(0.23, 0.39, 0.15, 1.0), (219, 60))
-        .offset(vec2(-928.0, -896.0))
-        .set_props(&[
+    let background = Background::new(
+        Color::new(0.23, 0.39, 0.15, 1.0),
+        vec2(-928.0, -896.0),
+        vec![
             ((148, 0), Gravel1),
             ((149, 0), Gravel1),
             ((150, 0), Gravel1),
@@ -1128,8 +1129,8 @@ pub fn init(res: &mut Resources) -> LevelData {
             ((203, 58), Grass2),
             ((204, 58), Grass2),
             ((205, 58), Grass2),
-        ])
-        .build(res);
+        ],
+    );
 
     let mut animals = Entities::new();
     animals.push(|idx| Animal::new(Horse, idx, res, vec2(0.00001, 0.0)));

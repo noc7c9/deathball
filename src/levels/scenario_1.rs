@@ -15,9 +15,10 @@ use crate::{
 pub fn init(res: &mut Resources) -> LevelData {
     let objective = Objective::kill_enemies(20);
 
-    let background = Background::builder(Color::new(0.258824, 0.341176, 0.219608, 1.0), (204, 121))
-        .offset(vec2(-1504.0, -3072.0))
-        .set_props(&[
+    let background = Background::new(
+        Color::new(0.258824, 0.341176, 0.219608, 1.0),
+        vec2(-1504.0, -3072.0),
+        vec![
             ((88, 0), Grass3),
             ((89, 0), Grass3),
             ((90, 1), Grass3),
@@ -1964,8 +1965,8 @@ pub fn init(res: &mut Resources) -> LevelData {
             ((32, 118), FlowerYellow),
             ((32, 119), FlowerYellow),
             ((44, 119), FlowerYellow),
-        ])
-        .build(res);
+        ],
+    );
 
     let mut animals = Entities::new();
     animals.push(|idx| Animal::new(Mouse, idx, res, vec2(-108.0, -35.0)));

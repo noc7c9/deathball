@@ -15,22 +15,25 @@ use crate::{
 pub fn init(res: &mut Resources) -> LevelData {
     let objective = Objective::none();
 
-    let background =
-        Background::builder(Color::new(59. / 255., 99. / 255., 38. / 255., 1.), (26, 20))
-            .set_prop((2, 2), Prop::Grass1)
-            .set_prop((3, 2), Prop::Grass2)
-            .set_prop((4, 2), Prop::Grass3)
-            .set_prop((2, 3), Prop::Gravel1)
-            .set_prop((3, 3), Prop::Gravel2)
-            .set_prop((4, 3), Prop::Gravel3)
-            .set_prop((2, 5), Prop::FlowerWhite)
-            .set_prop((3, 5), Prop::FlowerYellow)
-            .set_prop((4, 5), Prop::FlowerRed)
-            .set_prop((5, 5), Prop::FlowerBlack)
-            .set_prop((6, 5), Prop::Eggplant)
-            .set_prop((8, 2), Prop::Mud)
-            .set_prop((8, 3), Prop::Hay)
-            .build(res);
+    let background = Background::new(
+        Color::new(59. / 255., 99. / 255., 38. / 255., 1.),
+        vec2(0., 0.),
+        vec![
+            ((2, 2), Prop::Grass1),
+            ((3, 2), Prop::Grass2),
+            ((4, 2), Prop::Grass3),
+            ((2, 3), Prop::Gravel1),
+            ((3, 3), Prop::Gravel2),
+            ((4, 3), Prop::Gravel3),
+            ((2, 5), Prop::FlowerWhite),
+            ((3, 5), Prop::FlowerYellow),
+            ((4, 5), Prop::FlowerRed),
+            ((5, 5), Prop::FlowerBlack),
+            ((6, 5), Prop::Eggplant),
+            ((8, 2), Prop::Mud),
+            ((8, 3), Prop::Hay),
+        ],
+    );
 
     let mut animals = Entities::new();
     let mut buildings = Entities::new();
