@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 use crate::Resources;
 
 // magic value that makes the sizes match
-const CAMERA_ZOOM_FACTOR: f32 = 2.048;
+const CAMERA_ZOOM_FACTOR: f32 = 2.0;
 
 pub struct Background {
     clear_color: Color,
@@ -80,12 +80,12 @@ impl BackgroundBuilder {
             if let Some(prop) = prop.map(Prop::to_data) {
                 let w = self.size.0 as usize;
                 let h = self.size.1 as usize;
-                let x = (idx % w) as i32 - (w as i32 / 2);
-                let y = (idx / w) as i32 - (h as i32 / 2);
+                let x = (idx % w) as f32 - (w as f32 / 2.);
+                let y = (idx / w) as f32 - (h as f32 / 2.);
                 res.assets
                     .props
                     .multisprite(prop.position, prop.size)
-                    .draw_top_right(vec2(x as f32, y as f32) * tile_size);
+                    .draw_top_right(vec2(x, y) * tile_size);
             }
         }
 
