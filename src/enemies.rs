@@ -61,7 +61,7 @@ impl Variant {
                 health: 200,
                 speed: 75.,
                 detection_range: 600.,
-                attack_impulse: 500.,
+                attack_impulse: 300.,
                 attack_cooldown: 5.,
             },
             Variant::DemonBoss => VariantData {
@@ -70,7 +70,7 @@ impl Variant {
                 health: 400,
                 speed: 50.,
                 detection_range: 6000.,
-                attack_impulse: 1000.,
+                attack_impulse: 600.,
                 attack_cooldown: 5.,
             },
             Variant::Farmer => VariantData {
@@ -79,7 +79,7 @@ impl Variant {
                 health: 10,
                 speed: 50.,
                 detection_range: 300.,
-                attack_impulse: 500.,
+                attack_impulse: 300.,
                 attack_cooldown: 10.,
             },
             Variant::Police => VariantData {
@@ -88,7 +88,7 @@ impl Variant {
                 health: 20,
                 speed: 50.,
                 detection_range: 400.,
-                attack_impulse: 500.,
+                attack_impulse: 300.,
                 attack_cooldown: 10.,
             },
             Variant::Snowman => VariantData {
@@ -97,7 +97,7 @@ impl Variant {
                 health: 25,
                 speed: 25.,
                 detection_range: 600.,
-                attack_impulse: 500.,
+                attack_impulse: 300.,
                 attack_cooldown: 7.,
             },
             Variant::Soldier => VariantData {
@@ -106,7 +106,7 @@ impl Variant {
                 health: 50,
                 speed: 60.,
                 detection_range: 400.,
-                attack_impulse: 700.,
+                attack_impulse: 420.,
                 attack_cooldown: 9.,
             },
         }
