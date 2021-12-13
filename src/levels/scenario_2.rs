@@ -9,6 +9,7 @@ use crate::{
     entities::Entities,
     levels::LevelData,
     objectives::Objective,
+    text_bubbles::TextBubble,
     Resources,
 };
 
@@ -10618,5 +10619,6 @@ pub fn init(res: &mut Resources) -> LevelData {
         animals,
         buildings,
         enemies,
+        text_bubbles: vec![],
     }
 }

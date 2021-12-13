@@ -80,5 +80,6 @@ pub fn init(res: &mut Resources) -> LevelData {
         animals,
         buildings,
         enemies,
+        text_bubbles: vec![],
     }
 }

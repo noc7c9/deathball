@@ -14,7 +14,9 @@ use crate::{
     levels::Level,
     objectives::Objective,
     physics::{PhysicsEvent, PhysicsEventKind},
-    scenes, Resources,
+    scenes,
+    text_bubbles::TextBubble,
+    Resources,
 };
 
 use super::{Scene, SceneChange};
@@ -42,6 +44,7 @@ pub struct Combat {
     bgm: bgm::Track,
     objective: Objective,
     background: Background,
+    text_bubbles: Vec<TextBubble>,
     death_ball: DeathBall,
     animals: Entities<Animal, { groups::ANIMAL }>,
     buildings: Entities<Building, { groups::BUILDING }>,
@@ -64,6 +67,7 @@ impl Combat {
             bgm: data.bgm,
             objective: data.objective,
             background: data.background,
+            text_bubbles: data.text_bubbles,
             animals: data.animals,
             buildings: data.buildings,
             enemies: data.enemies,
@@ -339,6 +343,10 @@ impl Scene for Combat {
         self.camera.enable();
 
         self.background.draw(res);
+        for text_bubble in &self.text_bubbles {
+            text_bubble.draw(res);
+        }
+
         self.death_ball.draw(res);
         for hit_effect in &self.hit_effects {
             hit_effect.draw();

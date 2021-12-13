@@ -25,7 +25,9 @@ pub struct Assets {
 
     // misc
     pub icon: Texture2D,
-    pub font: Option<Vec<u8>>,
+    pub font: Font,
+    // this is an Option so that the font data doesn't need to be cloned
+    pub font_bytes: Option<Vec<u8>>,
 }
 
 impl Assets {
@@ -56,7 +58,7 @@ pub struct AssetsLoader {
 
     // misc
     icon: Option<Texture2D>,
-    font: Option<Vec<u8>>,
+    font_bytes: Option<Vec<u8>>,
 }
 
 pub enum Progress {
@@ -81,7 +83,7 @@ impl AssetsLoader {
             space: None,
             take_me_home: None,
             icon: None,
-            font: None,
+            font_bytes: None,
         }
     }
 
@@ -91,13 +93,13 @@ impl AssetsLoader {
         // use a simple hard coded loading process, no need to overengineer this
         match self.progress {
             0 => {
-                let (icon, font) = join(
+                let (icon, font_bytes) = join(
                     load_texture("./assets/img/icon.png"),
                     load_file("./assets/kenney-future.ttf"),
                 )
                 .await;
                 self.icon = Some(icon.unwrap());
-                self.font = Some(font.unwrap());
+                self.font_bytes = Some(font_bytes.unwrap());
             }
             1 => {
                 let (animals, buildings, enemies, props) = join4(
@@ -175,7 +177,8 @@ impl AssetsLoader {
                     space: self.space.take().unwrap(),
                     take_me_home: self.take_me_home.take().unwrap(),
                     icon: self.icon.take().unwrap(),
-                    font: self.font.take(),
+                    font: load_ttf_font_from_bytes(self.font_bytes.as_deref().unwrap()).unwrap(),
+                    font_bytes: self.font_bytes.take(),
                 };
                 return Progress::Complete(Box::new(assets));
             }

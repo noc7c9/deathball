@@ -1,6 +1,6 @@
 use crate::{
     animals::Animal, audio::bgm, background::Background, buildings::Building, enemies::Enemy,
-    entities::Entities, groups, objectives::Objective, Resources,
+    entities::Entities, groups, objectives::Objective, text_bubbles::TextBubble, Resources,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -31,6 +31,7 @@ pub struct LevelData {
     pub max_score: u32,
     pub objective: Objective,
     pub background: Background,
+    pub text_bubbles: Vec<TextBubble>,
     pub animals: Entities<Animal, { groups::ANIMAL }>,
     pub buildings: Entities<Building, { groups::BUILDING }>,
     pub enemies: Entities<Enemy, { groups::ENEMY }>,

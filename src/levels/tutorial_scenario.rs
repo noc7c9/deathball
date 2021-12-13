@@ -9,6 +9,7 @@ use crate::{
     entities::Entities,
     levels::LevelData,
     objectives::Objective,
+    text_bubbles::TextBubble,
     Resources,
 };
 
@@ -1220,5 +1221,38 @@ pub fn init(res: &mut Resources) -> LevelData {
         animals,
         buildings,
         enemies,
+        text_bubbles: vec![
+            TextBubble::new(
+                vec2(-128.0, -278.0),
+                &["Press left click", "to select and", "move your horse!"],
+            ),
+            TextBubble::new(
+                vec2(197.0, -172.0),
+                &["Press and drag", "right click to", "move the camera!"],
+            ),
+            TextBubble::new(
+                vec2(633.0, -207.0),
+                &[
+                    "Scroll to zoom in",
+                    "or out. Middle",
+                    "click to recenter",
+                    "camera.",
+                ],
+            ),
+            TextBubble::new(
+                vec2(1021.0, -218.0),
+                &["Objectives are in", "the bottom left", "corner."],
+            ),
+            TextBubble::new(
+                vec2(1909.0, -306.0),
+                &[
+                    "Ram enemies to",
+                    "eliminate them.",
+                    "Their attacks",
+                    "will knock out",
+                    "your animals!",
+                ],
+            ),
+        ],
     }
 }

@@ -9,6 +9,7 @@ mod levels;
 mod physics;
 mod scenes;
 mod spritesheet;
+mod text_bubbles;
 
 use assets::Assets;
 use audio::AudioManager;
@@ -98,9 +99,10 @@ async fn main() {
         ctx.set_fonts({
             let mut fonts = FontDefinitions::default();
 
-            fonts
-                .font_data
-                .insert("font".to_owned(), res.assets.font.take().unwrap().into());
+            fonts.font_data.insert(
+                "font".to_owned(),
+                res.assets.font_bytes.take().unwrap().into(),
+            );
 
             fonts
                 .fonts_for_family

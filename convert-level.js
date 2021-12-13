@@ -151,6 +151,7 @@ function main() {
         buildings: [],
         animals: [],
         enemies: [],
+        textBubbles: [],
     };
 
     log('Converting', filename);
@@ -289,6 +290,19 @@ function main() {
         level.enemies.push({ type, position });
     });
 
+    /***
+     * text bubbles
+     */
+
+    data.forEach((datum) => {
+        if (datum.name !== 'Label') return;
+        const parent = data.find((d) => d.name === datum.parent);
+        const { margin_left, margin_top } = parent;
+        const { text } = datum;
+        const position = [parseFloat(margin_left), parseFloat(margin_top)];
+        level.textBubbles.push({ position, text });
+    });
+
     console.log(printLevel(level));
 }
 
@@ -363,6 +377,7 @@ function printLevel({
     animals,
     buildings,
     enemies,
+    textBubbles,
 }) {
     return `
 use macroquad::prelude::*;
@@ -376,6 +391,7 @@ use crate::{
     entities::Entities,
     levels::LevelData,
     objectives::Objective,
+    text_bubbles::TextBubble,
     Resources,
 };
 
@@ -430,6 +446,10 @@ pub fn init(res: &mut Resources) -> LevelData {
         animals,
         buildings,
         enemies,
+        text_bubbles: vec![${textBubbles.map(
+            ({ position, text }) =>
+                `TextBubble::new(${to_vec2(position)}, &["${text}"])`,
+        )}],
     }
 }
     `;
