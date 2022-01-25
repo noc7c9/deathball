@@ -108,7 +108,7 @@ impl Scene for LevelSelect {
                         Frame::window(&ctx.style()).show(ui, |ui| {
                             Resize::default().fixed_size((640., 230.)).show(ui, |ui| {
                                 ScrollArea::vertical().stick_to_bottom().show(ui, |ui| {
-                                    for (i, chatter) in self.chatter.iter().enumerate() {
+                                    for (i, &chatter) in self.chatter.iter().enumerate() {
                                         let align =
                                             if i % 2 == 0 { Align::Min } else { Align::Max };
                                         ui.with_layout(Layout::top_down(align), |ui| {

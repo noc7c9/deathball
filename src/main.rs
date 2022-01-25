@@ -99,10 +99,8 @@ async fn main() {
         ctx.set_fonts({
             let mut fonts = FontDefinitions::default();
 
-            fonts.font_data.insert(
-                "font".to_owned(),
-                res.assets.font_bytes.take().unwrap().into(),
-            );
+            let font_data = FontData::from_owned(res.assets.font_bytes.take().unwrap());
+            fonts.font_data.insert("font".to_owned(), font_data);
 
             fonts
                 .fonts_for_family
@@ -216,7 +214,7 @@ async fn loading_screen() -> Assets {
                             ui.with_layout(
                                 Layout::centered_and_justified(Direction::TopDown),
                                 |ui| {
-                                    ui.add(Label::new(progress).heading());
+                                    ui.label(RichText::new(progress).heading());
                                 },
                             );
                         });

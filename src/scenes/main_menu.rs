@@ -38,7 +38,8 @@ impl Scene for MainMenu {
                     .show(ui, |ui| {
                         Frame::window(&ctx.style()).show(ui, |ui| {
                             ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
-                                ui.add(Label::new("GIANT HORSE DEATHBALL").heading().wrap(false));
+                                let text = RichText::new("GIANT HORSE DEATHBALL").heading();
+                                ui.add(Label::new(text).wrap(false));
 
                                 ui.allocate_exact_size(vec2(0., 16.), Sense::hover());
 

@@ -295,11 +295,11 @@ impl Scene for Combat {
             .show(ctx, |ui| {
                 ui.with_layout(Layout::top_down(Align::Center), |ui| {
                     if let Status::HasLost = self.status {
-                        ui.add(Label::new("You Lose!").heading());
+                        ui.label(RichText::new("You Lose!").heading());
                         ui.allocate_exact_size(vec2(0., 8.), Sense::hover());
                         ui.label("Press Spacebar to retry.");
                     } else if let Status::HasWon = self.status {
-                        ui.add(Label::new("You Win!").heading());
+                        ui.label(RichText::new("You Win!").heading());
                         ui.allocate_exact_size(vec2(0., 8.), Sense::hover());
                         ui.label("Press Spacebar to go to next screen.");
                     }
@@ -315,8 +315,8 @@ impl Scene for Combat {
                     cols[0].label("Objective:");
                     cols[0].label("Current:");
 
-                    cols[1].add(Label::new(&self.objective).wrap(false));
-                    cols[1].label(self.objective.current());
+                    cols[1].add(Label::new(self.objective.to_string()).wrap(false));
+                    cols[1].label(self.objective.current().to_string());
                 });
             });
 
@@ -328,10 +328,10 @@ impl Scene for Combat {
                 ui.with_layout(Layout::top_down(Align::Center), |ui| {
                     if let Status::Losing { timer } = self.status {
                         ui.label("Deathball Is Dissolved");
-                        ui.label(timer.ceil());
+                        ui.label(timer.ceil().to_string());
                     } else {
                         ui.label("Deathball Count");
-                        ui.label(self.death_ball_size);
+                        ui.label(self.death_ball_size.to_string());
                     }
                 });
             });
